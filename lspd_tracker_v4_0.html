@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSPD Automated Roster & Activity Tracker</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Load Flatpickr (Calendar Date Picker) & Dark Theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/he.js"></script>
+
+    <!-- Load Rubik Font for Hebrew/English readability -->
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Rubik', sans-serif;
+            background-color: #0b0f19;
+            color: #f1f5f9;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom scrollbar styling */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b; 
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6; 
+        }
+        /* Glowing effects */
+        .glow-blue {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+        }
+        .glow-indigo {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.25);
+        }
+        .tab-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Discord Embed styling for preview */
+        .discord-embed {
+            border-left: 4px solid #3498db;
+            background: #2f3136;
+            border-radius: 4px;
+            padding: 12px 16px;
+            margin-top: 8px;
+        }
+        .discord-embed.danger {
+            border-left-color: #ed4245;
+        }
+        th.sortable:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Skeleton Pulse Animation */
+        @keyframes pulse-fast {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-fast {
+            animation: pulse-fast 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* Flatpickr Customization for dark theme */
+        .flatpickr-calendar {
+            font-family: 'Rubik', sans-serif;
+            background: #0f172a !important;
+            border: 1px solid #1e293b !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        
+        <!-- Header -->
+        <header class="mb-8 bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-3xl p-6 glow-blue flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-blue-600/10 rounded-2xl border border-blue-500/20 text-blue-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-wide font-sans">LSPD Activity Tracker <span class="text-xs font-semibold px-2.5 py-1 bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30"> LTR</span></h1>
+                    <p class="text-slate-400 text-sm mt-1">ניהול שעות, חופשות, סיכומים וייצוא נתונים מותאם לדיסקורד</p>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 w-full md:w-auto">
+                <div class="bg-blue-950/20 border border-blue-900/30 rounded-xl py-2 px-4 text-center">
+                    <span class="block text-xs text-blue-400">סה"כ שעות השבוע</span>
+                    <span id="statTotalHours" class="text-lg font-bold text-blue-400 font-mono">0D-0H-0M</span>
+                </div>
+                <div class="bg-slate-950/50 border border-slate-800/80 rounded-xl py-2 px-4 text-center">
+                    <span class="block text-xs text-slate-400">שוטרים שפוענחו</span>
+                    <span id="statTotal" class="text-xl font-bold text-slate-200">0</span>
+                </div>
+                <div class="bg-emerald-950/20 border border-emerald-900/30 rounded-xl py-2 px-4 text-center">
+                    <span class="block text-xs text-emerald-400">עמדו ביעד ✅</span>
+                    <span id="statSuccess" class="text-xl font-bold text-emerald-400">0</span>
+                </div>
+                <div class="bg-rose-950/20 border border-rose-900/30 rounded-xl py-2 px-4 text-center">
+                    <span class="block text-xs text-rose-400">לא עמדו ביעד ❌</span>
+                    <span id="statFail" class="text-xl font-bold text-rose-400">0</span>
+                </div>
+                <div class="bg-amber-950/20 border border-amber-900/30 rounded-xl py-2 px-4 text-center">
+                    <span class="block text-xs text-amber-400">בסבב חופשה ❓</span>
+                    <span id="statVacation" class="text-xl font-bold text-amber-400">0</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+            
+            <div class="xl:col-span-4 space-y-6">
+                
+                <!-- PLAYTIME INPUT BOX -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg relative">
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="block text-sm font-semibold text-slate-200 flex items-center gap-2">
+                            <span class="inline-flex items-center justify-center w-5 h-5 bg-blue-500 text-slate-900 text-xs font-bold rounded-full">1</span>
+                            קובץ שעות גולמי (PlayTime)
+                        </label>
+                        <button id="demoPlaytimeBtn" class="text-xs text-blue-400 hover:text-blue-300 transition-colors font-bold">טען נתוני דוגמה</button>
+                    </div>
+                    <textarea id="playtimeInput" class="w-full h-40 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-blue-500 transition-colors custom-scrollbar" placeholder="הדבק כאן את תוכן הקובץ playtime.txt..."></textarea>
+                </div>
+
+                <!-- VACATION LOGS INPUT BOX -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                    <label class="block text-sm font-semibold text-slate-200 flex items-center gap-2 mb-2">
+                        <span class="inline-flex items-center justify-center w-5 h-5 bg-blue-500 text-slate-900 text-xs font-bold rounded-full">2</span>
+                        דו"ח חופשות מהדיסקורד
+                    </label>
+                    <textarea id="vacationInput" class="w-full h-32 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-blue-500 transition-colors custom-scrollbar" placeholder="תג: 218&#10;שם מלא: Dolce De Leche&#10;תאריכים: 29/06 - 01/07&#10;סיבה: אישי"></textarea>
+                </div>
+
+                <!-- SETTINGS & CONTROLS -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+                    <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                        <span class="inline-flex items-center justify-center w-5 h-5 bg-blue-500 text-slate-900 text-xs font-bold rounded-full font-mono">3</span>
+                        הגדרות סינון, יעדים ותאריכים
+                    </h3>
+                    
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1.5 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            טווח תאריכים לדו"ח הדיסקורד
+                        </label>
+                        <input type="text" id="reportWeekRange" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-medium text-center text-sm focus:outline-none focus:border-blue-500 font-mono cursor-pointer hover:bg-slate-800 transition-colors" placeholder="בחר טווח תאריכים">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1.5">מחלקה פעילה</label>
+                        <select id="categorySelector" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white font-medium focus:outline-none focus:border-blue-500 transition-colors">
+                            <option value="Patrol Unit">Patrol Unit (ברירת מחדל)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">יעד שעות רגיל</label>
+                            <input type="number" id="targetNormal" value="15" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-center text-sm focus:outline-none focus:border-blue-500 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">יעד שעות חריגים</label>
+                            <input type="number" id="targetException" value="5" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-center text-sm focus:outline-none focus:border-blue-500 font-mono">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TRIGGER ACTIONS -->
+                <div class="flex gap-4">
+                    <button id="processBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg hover:shadow-blue-900/30 flex items-center justify-center gap-2 text-base">
+                        עבד ונתח נתונים
+                    </button>
+                    <button id="resetAllBtn" class="bg-slate-800 hover:bg-red-950 hover:text-red-300 text-slate-300 py-3.5 px-4 rounded-xl transition-colors border border-slate-700/50">
+                        איפוס
+                    </button>
+                </div>
+
+            </div>
+
+            <div class="xl:col-span-8 space-y-6">
+                
+                <!-- Output Navigation Tabs -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-md flex flex-wrap gap-2">
+                    <button id="tabTableBtn" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm text-blue-400 bg-blue-500/10 border border-blue-500/20 tab-transition min-w-[120px]">
+                        📊 טבלה אינטראקטיבית
+                    </button>
+                    <button id="tabStatsBtn" class="flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm text-slate-400 hover:text-white tab-transition min-w-[120px]">
+                        📈 סטטיסטיקות
+                    </button>
+                    <button id="tabDiscordBtn" class="flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm text-slate-400 hover:text-white tab-transition min-w-[120px]">
+                        💬 עיצוב לדיסקורד
+                    </button>
+                    <button id="tabLogsBtn" class="flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm text-slate-400 hover:text-white tab-transition relative min-w-[120px]">
+                        🔍 חופשות
+                        <span id="unmatchedBadge" class="absolute -top-1.5 -left-1 px-1.5 py-0.5 bg-amber-500 text-slate-950 font-bold text-[10px] rounded-full hidden">0</span>
+                    </button>
+                </div>
+
+                <!-- TAB CONTAINER 1: INTERACTIVE TABLE -->
+                <div id="tabTableContent" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                        <div>
+                            <h2 class="text-lg font-bold text-white">שוטרים רשומים (לחץ על כותרות העמודות למיון)</h2>
+                            <p class="text-slate-400 text-xs">שמות השחקנים צבועים לפי הסטטוס שלהם. השעות מוצגות בפורמט D-H-M.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="addNewOfficerBtn" class="bg-slate-800 hover:bg-slate-700 text-white text-xs py-1.5 px-3 rounded-lg border border-slate-700 flex items-center gap-1">
+                                ➕ הוספה ידנית
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="flex flex-col sm:flex-row gap-4 bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
+                        <input type="text" id="searchBar" placeholder="חפש שוטר לפי שם או מספר תג..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                        <select id="statusFilter" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-blue-500">
+                            <option value="all">הצג הכל</option>
+                            <option value="success">עמדו ביעד</option>
+                            <option value="fail">לא עמדו ביעד</option>
+                            <option value="vacation">בחופשה</option>
+                            <option value="exception">חריגים בלבד</option>
+                        </select>
+                    </div>
+
+                    <!-- Table Base -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-800">
+                        <table class="w-full text-right text-sm">
+                            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                                <tr>
+                                    <th class="px-4 py-3 font-semibold sortable cursor-pointer" onclick="handleSort('badge')">שוטר / תג ↕</th>
+                                    <th class="px-4 py-3 font-semibold sortable cursor-pointer w-40" onclick="handleSort('hours')">שעות ויעד ↕</th>
+                                    <th class="px-4 py-3 font-semibold sortable cursor-pointer w-32" onclick="handleSort('missing')">פער שעות ↕</th>
+                                    <th class="px-4 py-3 font-semibold">דרגה</th>
+                                    <th class="px-4 py-3 font-semibold text-center">הגדרות סטטוס</th>
+                                    <th class="px-4 py-3 font-semibold text-center">מחיקה</th>
+                                </tr>
+                            </thead>
+                            <tbody id="interactiveRoster" class="divide-y divide-slate-800/50">
+                                <tr>
+                                    <td colspan="6" class="text-center py-8 text-slate-500 text-sm">הזן נתונים ולחץ "עבד ונתח נתונים" כדי להציג את הטבלה</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB CONTAINER 2: DISCORD PREVIEW -->
+                <div id="tabDiscordContent" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-6 hidden">
+                    
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <h2 class="text-lg font-bold text-white">עיצוב ויצוא לדיסקורד</h2>
+                            <p class="text-slate-400 text-xs">הדוח מחולק ל-2 הודעות (אמבדים) בשל מגבלות טקסט של דיסקורד.</p>
+                        </div>
+                        <button id="discordCopyBtn" class="bg-slate-800 hover:bg-slate-700 text-white text-xs py-2 px-4 rounded-lg border border-slate-700 flex items-center gap-2">
+                            📋 העתק טקסט גולמי
+                        </button>
+                    </div>
+
+                    <!-- Hidden text area for copy fallback -->
+                    <textarea id="discordRawText" class="hidden"></textarea>
+
+                    <!-- Webhook Settings & Trigger Panel -->
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 glow-indigo">
+                        <div class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                            שיגור אוטומטי לערוץ הדיסקורד
+                        </div>
+                        <button id="sendWebhookBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-lg transition-all text-xs flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-indigo-900/40 w-full sm:w-auto">
+                            שגר לדיסקורד כ-Embed 🚀
+                        </button>
+                    </div>
+
+                    <!-- Rich simulation visualization -->
+                    <div>
+                        <span class="block text-xs font-bold text-slate-400 mb-2">תצוגת סימולציה של מה שיישלח לערוץ:</span>
+                        <div class="bg-[#36393f] border border-slate-800 rounded-xl p-4 max-h-[500px] overflow-y-auto custom-scrollbar" dir="ltr">
+                            <!-- Discord Bot Message Header -->
+                            <div class="flex items-start gap-3 mb-2">
+                                <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-extrabold text-sm shadow-inner shrink-0">LSPD</div>
+                                <div class="flex-1 min-w-0 pt-1">
+                                    <span class="font-bold text-white text-sm">LSPD Tracker Bot</span>
+                                    <span class="text-[10px] px-1 py-0.5 bg-blue-500 text-white font-bold rounded ml-2">BOT</span>
+                                    <span class="text-xs text-slate-400 ml-2">Today at 12:00 PM</span>
+                                    
+                                    <!-- Embed 1 -->
+                                    <div id="previewEmbed1" class="discord-embed text-[13px] text-[#dcddde] font-sans leading-relaxed mt-2 whitespace-pre-wrap"></div>
+                                    
+                                    <!-- Embed 2 -->
+                                    <div id="previewEmbed2" class="discord-embed danger text-[13px] text-[#dcddde] font-sans leading-relaxed whitespace-pre-wrap"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB CONTAINER 3: STATS -->
+                <div id="tabStatsContent" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4 hidden">
+                    <div>
+                        <h2 class="text-lg font-bold text-white">סטטיסטיקות ומגמות</h2>
+                        <p class="text-slate-400 text-xs">פירוט נפרד לסד"כ הכללי ולחריגים.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <!-- Normal Officers Stats -->
+                        <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 flex flex-col items-center relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 rounded-bl-full z-0"></div>
+                            <h3 class="text-sm font-bold text-slate-300 mb-4 z-10 relative">סד"כ רגיל - עמידה ביעדים</h3>
+                            <div class="w-full max-w-[220px] z-10 relative">
+                                <canvas id="pieChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 flex flex-col items-center">
+                            <h3 class="text-sm font-bold text-slate-300 mb-4">שיאני השעות בסד"כ (Top 5) 🏆</h3>
+                            <div class="w-full h-full min-h-[220px] flex items-center justify-center">
+                                <canvas id="barChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Exception Stats -->
+                        <div class="md:col-span-2 bg-slate-950 rounded-xl p-4 border border-slate-800 mt-4 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-32 h-32 bg-amber-500/5 rounded-br-full z-0"></div>
+                            <h3 class="text-base font-bold text-amber-400 mb-4 z-10 relative flex items-center gap-2">
+                                ⚠️ סטטיסטיקת חריגים
+                            </h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 z-10 relative">
+                                <div class="flex flex-col items-center justify-center">
+                                    <div class="w-full max-w-[200px]">
+                                        <canvas id="exceptionPieChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col justify-center space-y-4">
+                                    <div id="exceptionStatsBox" class="text-sm text-slate-300 space-y-2">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB CONTAINER 4: DETECTED VACATIONS LOGS -->
+                <div id="tabLogsContent" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4 hidden">
+                    <div>
+                        <h2 class="text-lg font-bold text-white">דוח פענוח חופשות</h2>
+                        <p class="text-slate-400 text-xs">להלן חופשות שחולצו מקובץ החופשות, והצלבתן עם הרוסטר שפוענח:</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wide mb-2">⚠️ חופשות שזוהו ללא שוטר תואם במערכת:</h3>
+                            <div id="unmatchedVacationsList" class="bg-amber-950/20 border border-amber-900/30 rounded-xl p-4 text-xs space-y-2 text-amber-300">
+                                <p class="text-slate-500 italic">לא נמצאו חופשות ללא התאמה.</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wide mb-2">✅ חופשות שהוצלבו בהצלחה לתוך הדוח הפעיל:</h3>
+                            <div id="matchedVacationsList" class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs space-y-2 text-slate-300">
+                                <p class="text-slate-500 italic">לא נמצאו חופשות שהוצלבו.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- MODAL FOR MANUAL OFFICER ADDITION -->
+    <div id="manualModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl relative glow-blue" dir="rtl">
+            <h3 class="text-lg font-bold text-white mb-4">הוספת שוטר באופן ידני</h3>
+            <form id="manualAddForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">מספר תג (ניתן לשלב אותיות)</label>
+                    <input type="text" id="mBadge" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">שם שוטר</label>
+                    <input type="text" id="mName" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">שעות עשרוניות (לדוגמה 15.5)</label>
+                        <input type="number" id="mHours" step="0.1" min="0" value="0" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">דרגה</label>
+                        <select id="mRank" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                            <option value="Officer">Officer</option>
+                            <option value="Cadet">Cadet</option>
+                            <option value="Sr. Officer">Sr. Officer</option>
+                            <option value="Corporal">Corporal</option>
+                            <option value="Sergeant">Sergeant</option>
+                            <option value="Lieutenant">Lieutenant</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6 py-2">
+                    <label class="flex items-center cursor-pointer gap-2">
+                        <input type="checkbox" id="mIsException" class="w-4 h-4 bg-slate-950 rounded border-slate-800 text-blue-600 focus:ring-0">
+                        <span class="text-xs text-slate-300">שחקן חריג</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer gap-2">
+                        <input type="checkbox" id="mOnVacation" class="w-4 h-4 bg-slate-950 rounded border-slate-800 text-blue-600 focus:ring-0">
+                        <span class="text-xs text-slate-300">בסבב חופשה</span>
+                    </label>
+                </div>
+                
+                <div class="flex gap-3 justify-end pt-2">
+                    <button type="button" id="modalCancelBtn" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-sm">ביטול</button>
+                    <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-bold">הוספה</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST POPUPS -->
+    <div id="toastContainer" class="fixed bottom-5 left-5 space-y-3 z-50"></div>
+
+    <!-- FOOTER -->
+    <footer class="mt-8 mb-4 text-center flex flex-col items-center justify-center">
+        <div class="px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 shadow-[0_0_10px_rgba(59,130,246,0.1)]">
+            <p class="text-blue-500 text-xs font-bold tracking-widest font-mono uppercase">Dev By EDevelopment</p>
+        </div>
+    </footer>
+
+    <script>
+        // ==========================================
+        // הגדרות מערכת - הכתובת של הדיסקורד וובהוק
+        // ==========================================
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1521278449178644582/GpSyUJJfnMWo3jR7yaKrPSbOpijry2U5wmmk3J92gm1IUe4iigTVWTHPic6_TZSj23LJ";
+        
+        // State
+        let roster = [];
+        let parsedVacations = [];
+        let activeCategory = 'Patrol Unit';
+        let embed1Content = '';
+        let embed2Content = '';
+        let currentSort = { column: 'badge', asc: true }; 
+
+        // Rank Ranges Config
+        let rankRanges = [
+            { id: 'high_command', label: 'High Command', min: 200, max: 205, rank: 'High Command', isException: false, hidden: true },
+            { id: 'lieutenant', label: 'Lieutenant', min: 207, max: 209, rank: 'Lieutenant', isException: false, hidden: false },
+            { id: 'sergeant', label: 'Sergeant', min: 211, max: 215, rank: 'Sergeant', isException: false, hidden: false },
+            { id: 'corporal', label: 'Corporal', min: 216, max: 220, rank: 'Corporal', isException: false, hidden: false },
+            { id: 'sr_officer', label: 'Sr. Officer', min: 221, max: 250, rank: 'Sr. Officer', isException: false, hidden: false },
+            { id: 'officer', label: 'Officer', min: 240, max: 299, rank: 'Officer', isException: false, hidden: false },
+            { id: 'cadet', label: 'Cadet', min: 600, max: 624, rank: 'Cadet', isException: false, hidden: false },
+            { id: 'exception_officer', label: 'Officer (חריגים)', min: 650, max: 711, rank: 'Officer', isException: true, hidden: false }
+        ];
+
+        const SAMPLE_PLAYTIME = `///-----------------|━━━High High Commanders━━━━|-----------------///
+200 | Avi Dahari - Sunday: 3 minute(s) | Total: 17 hour(s), 51.5 minute(s)
+///-----------------|Patrol Unit|-----------------///
+218 | Dolce De Leche - Sunday: 7 hour(s) | Total: 33.7 hour(s)
+222 | Juan Rool - Total: 10.8 hour(s)
+213-K | Dan Smith - Total: 15 hour(s), 58 minute(s)
+274 | Jack Spencer - Total: 43.5 minute(s)
+292 | Michael Scofield - Sunday: 0 minute(s) | Total: 2.5 hour(s)`;
+
+        const SAMPLE_VACATIONS = `222 | Juan Rool [STRM],  — 
+2:26
+תג : 222
+שם מלא : Juan Rool
+תאריך : 05/07 - 16/07
+סיבה : לימודים 
+
+274 | Jack Spencer — 
+10:21
+תג : 274 
+שם מלא : jack spencer 
+תאריך :   5/7 - 12/7
+סיבה : עומס
+
+תג: 292
+שם מלא: Michael Scofield
+תאריך: 06/07 - 10/07
+סיבה: אישי (במידה וצריך אספר לאחד המפקדים בפרטי)
+
+תג: 213-K
+שם מלא: Dan Smith
+תאריך: 01/07 - 05/07
+סיבה: חופשה משפחתית`;
+
+        // Cache DOM elements
+        const playtimeInput = document.getElementById('playtimeInput');
+        const vacationInput = document.getElementById('vacationInput');
+        const targetNormal = document.getElementById('targetNormal');
+        const targetException = document.getElementById('targetException');
+        const processBtn = document.getElementById('processBtn');
+        const resetAllBtn = document.getElementById('resetAllBtn');
+        const demoPlaytimeBtn = document.getElementById('demoPlaytimeBtn');
+        const interactiveRoster = document.getElementById('interactiveRoster');
+        const searchBar = document.getElementById('searchBar');
+        const statusFilter = document.getElementById('statusFilter');
+        const reportWeekRange = document.getElementById('reportWeekRange');
+        
+        const previewEmbed1 = document.getElementById('previewEmbed1');
+        const previewEmbed2 = document.getElementById('previewEmbed2');
+        const discordRawText = document.getElementById('discordRawText');
+        const discordCopyBtn = document.getElementById('discordCopyBtn');
+        const sendWebhookBtn = document.getElementById('sendWebhookBtn');
+
+        // Chart instances
+        let pieChartInst = null;
+        let barChartInst = null;
+        let excPieChartInst = null;
+
+        // --- STREAMING_CHUNK:Defining Utility Functions... ---
+        function formatHoursDHM(decimalHours) {
+            if (!decimalHours || decimalHours === 0) return '0M';
+            const d = Math.floor(decimalHours / 24);
+            const h = Math.floor(decimalHours % 24);
+            const m = Math.round((decimalHours % 1) * 60);
+            
+            let parts = [];
+            if (d > 0) parts.push(`${d}D`);
+            if (h > 0) parts.push(`${h}H`);
+            if (m > 0 || (d === 0 && h === 0)) parts.push(`${m}M`);
+            
+            return parts.join('-');
+        }
+
+        function getAutoWeekRange() {
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const firstDay = new Date(now);
+            firstDay.setDate(now.getDate() - dayOfWeek);
+            const lastDay = new Date(now);
+            lastDay.setDate(now.getDate() + (6 - dayOfWeek));
+            return [firstDay, lastDay];
+        }
+
+        flatpickr("#reportWeekRange", {
+            mode: "range",
+            dateFormat: "d/m/Y",
+            locale: flatpickr.l10ns.he,
+            defaultDate: getAutoWeekRange(),
+            onChange: function(selectedDates) {
+                if(selectedDates.length === 2) buildReports();
+            }
+        });
+
+        function switchTab(activeTab) {
+            ['tabTable', 'tabStats', 'tabDiscord', 'tabLogs'].forEach(t => {
+                document.getElementById(`${t}Btn`).classList.replace('text-blue-400', 'text-slate-400');
+                document.getElementById(`${t}Btn`).classList.remove('bg-blue-500/10', 'border-blue-500/20');
+                document.getElementById(`${t}Content`).classList.add('hidden');
+            });
+            document.getElementById(`tab${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}Btn`).classList.add('text-blue-400', 'bg-blue-500/10', 'border-blue-500/20');
+            document.getElementById(`tab${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}Content`).classList.remove('hidden');
+        }
+
+        document.getElementById('tabTableBtn').addEventListener('click', () => switchTab('table'));
+        document.getElementById('tabStatsBtn').addEventListener('click', () => switchTab('stats'));
+        document.getElementById('tabDiscordBtn').addEventListener('click', () => switchTab('discord'));
+        document.getElementById('tabLogsBtn').addEventListener('click', () => switchTab('logs'));
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            let bg = 'bg-slate-900 border-slate-700', color = 'text-blue-400', icon = 'ℹ️';
+            if (type === 'success') { bg = 'bg-emerald-950/90 border-emerald-500/30'; color = 'text-emerald-400'; icon = '✅'; }
+            if (type === 'error') { bg = 'bg-rose-950/90 border-rose-500/30'; color = 'text-rose-400'; icon = '❌'; }
+            if (type === 'warning') { bg = 'bg-amber-950/90 border-amber-500/30'; color = 'text-amber-400'; icon = '⚠️'; }
+            
+            toast.className = `p-4 rounded-xl border ${bg} ${color} shadow-2xl flex items-center gap-3 text-sm font-semibold transition-all duration-300 opacity-0 translate-y-2`;
+            toast.innerHTML = `<span>${icon}</span> <div class="flex-1">${message}</div>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-2'), 50);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function setupDragAndDrop(elementId) {
+            const el = document.getElementById(elementId);
+            el.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                el.classList.add('border-blue-500', 'bg-slate-800/80');
+            });
+            el.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                el.classList.remove('border-blue-500', 'bg-slate-800/80');
+            });
+            el.addEventListener('drop', (e) => {
+                e.preventDefault();
+                el.classList.remove('border-blue-500', 'bg-slate-800/80');
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    const file = e.dataTransfer.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (event) => { el.value = event.target.result; showToast(`קובץ ${file.name} נטען בהצלחה!`, 'success'); };
+                    reader.readAsText(file, 'UTF-8');
+                }
+            });
+        }
+        setupDragAndDrop('playtimeInput');
+        setupDragAndDrop('vacationInput');
+
+        // --- STREAMING_CHUNK:Parsing Playtime Data... ---
+        function parsePlaytimeData(rawText) {
+            const lines = rawText.split('\n');
+            let currentCategory = 'Other';
+            const parsed = [];
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                
+                const categoryMatch = line.match(/\/+[-|]*([^|]+)\|/);
+                if (categoryMatch) {
+                    currentCategory = categoryMatch[1].replace(/[━\s]+/g, ' ').trim();
+                    continue;
+                }
+
+                if (line.includes('|')) {
+                    const parts = line.split('|');
+                    // השארת התג כמו שהוא (מאפשר גם אותיות וקווים כמו 213-K)
+                    const badge = parts[0].trim();
+                    const remainder = parts.slice(1).join('|').trim();
+
+                    let hours = 0, isException = remainder.includes('חריג');
+                    const totalMatch = remainder.match(/Total:\s*(?:(\d+)\s*hour\(s\))?\s*,?\s*(?:(\d+(?:\.\d+)?)\s*minute\(s\))?/i);
+                    if (totalMatch) hours = parseFloat(totalMatch[1] || 0) + (parseFloat(totalMatch[2] || 0) / 60);
+
+                    let namePart = remainder.split(' - ')[0];
+                    let name = namePart ? namePart.trim().replace(/\s*-\s*חריג.*/g, '').replace(/\s*חריג.*/g, '').replace(/\s*-\s*חייל.*/g, '').trim() : '';
+
+                    let rank = 'Officer', isHidden = false;
+                    
+                    // זיהוי דרגות (אם יש אות T נניח שזה קדט, אחרת נבדוק טווחים מספריים)
+                    if (badge.toUpperCase().includes('-T')) {
+                        rank = 'Cadet';
+                    } else {
+                        const badgeNum = parseInt(badge.replace(/\D/g, ''));
+                        if (!isNaN(badgeNum)) {
+                            const matchedRange = rankRanges.find(r => badgeNum >= r.min && badgeNum <= r.max);
+                            if (matchedRange) {
+                                rank = matchedRange.rank;
+                                if (matchedRange.isException) isException = true;
+                                if (matchedRange.hidden) isHidden = true;
+                            }
+                        }
+                    }
+
+                    let existing = parsed.find(o => o.badge.toLowerCase() === badge.toLowerCase());
+                    if (existing) {
+                        if (!existing.categories.includes(currentCategory)) existing.categories.push(currentCategory);
+                    } else {
+                        parsed.push({ badge, name, hours: parseFloat(hours.toFixed(2)), isException, isHidden, categories: [currentCategory], rank, onVacation: false });
+                    }
+                }
+            }
+            return parsed;
+        }
+
+        // --- STREAMING_CHUNK:Advanced Robust Vacation Parsing... ---
+        function parseVacationData(rawText) {
+            if (!rawText) return [];
+            const lines = rawText.split('\n');
+            const vacations = [];
+            let currentVac = null;
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                
+                // זיהוי שורת תג - מאפשר רווחים לפני הנקודתיים ותגים כמו 213-K
+                const badgeMatch = line.match(/(?:תג|מספר תג)\s*[:\-]\s*([a-zA-Z0-9\-]+)/i);
+                if (badgeMatch) {
+                    // שומר את החופשה הקודמת אם קיימת
+                    if (currentVac && currentVac.badge) vacations.push(currentVac);
+                    // מתחיל חופשה חדשה
+                    currentVac = { badge: badgeMatch[1].trim(), name: 'לא צוין', dates: 'לא צוין', reason: 'לא צוין' };
+                    continue;
+                }
+                
+                // אם אנחנו בתוך בלוק של חופשה, נחפש את שאר הנתונים
+                if (currentVac) {
+                    const nameMatch = line.match(/(?:שם מלא|שם)\s*[:\-]\s*(.+)/i);
+                    if (nameMatch) {
+                        currentVac.name = nameMatch[1].trim();
+                        continue;
+                    }
+                    
+                    const dateMatch = line.match(/(?:תאריכים|תאריך)\s*[:\-]\s*(.+)/i);
+                    if (dateMatch) {
+                        currentVac.dates = dateMatch[1].trim();
+                        continue;
+                    }
+                    
+                    const reasonMatch = line.match(/(?:סיבה)\s*[:\-]\s*(.+)/i);
+                    if (reasonMatch) {
+                        currentVac.reason = reasonMatch[1].trim();
+                        continue;
+                    }
+                }
+            }
+            // הוספת החופשה האחרונה שנקלטה
+            if (currentVac && currentVac.badge) vacations.push(currentVac);
+            
+            return vacations;
+        }
+
+        // --- STREAMING_CHUNK:Correlating Roster with Vacations... ---
+        function correlateData() {
+            const matched = [], unmatched = [];
+            
+            // פונקציות נירמול לחיפוש גמיש יותר (מתעלם מרווחים ואותיות גדולות/קטנות)
+            const normBadge = (b) => b.toString().replace(/\s+/g, '').toUpperCase();
+            const normName = (n) => n.toString().trim().replace(/\s+/g, ' ').toLowerCase();
+
+            parsedVacations.forEach(vac => {
+                // חיפוש השוטר במערכת
+                let officer = roster.find(o => {
+                    const badgeMatch = normBadge(o.badge) === normBadge(vac.badge);
+                    // חיפוש לפי שם (רק אם השם ארוך מספיק כדי למנוע טעויות)
+                    const nameMatch = vac.name.length > 2 && normName(o.name).includes(normName(vac.name));
+                    
+                    return badgeMatch || nameMatch;
+                });
+
+                if (officer) {
+                    officer.onVacation = true;
+                    officer.vacationDates = vac.dates;
+                    officer.vacationReason = vac.reason;
+                    matched.push({ officer, vac });
+                } else {
+                    unmatched.push(vac);
+                }
+            });
+            
+            document.getElementById('unmatchedBadge').textContent = unmatched.length;
+            document.getElementById('unmatchedBadge').classList.toggle('hidden', unmatched.length === 0);
+            
+            document.getElementById('matchedVacationsList').innerHTML = matched.length ? 
+                matched.map(i => `<div class="p-2 bg-slate-800 rounded text-slate-300 font-mono text-[11px] sm:text-xs">
+                    <span class="text-emerald-400 font-bold">${i.officer.name} (${i.officer.badge})</span>
+                    | תאריך: ${i.officer.vacationDates} | סיבה: ${i.officer.vacationReason}
+                </div>`).join('') : '<p class="text-slate-500">אין חופשות שהוצלבו.</p>';
+                
+            document.getElementById('unmatchedVacationsList').innerHTML = unmatched.length ? 
+                unmatched.map(v => `<div class="p-2 bg-amber-900/20 text-amber-300 rounded font-mono text-[11px] sm:text-xs">
+                    תג שזוהה: <b>${v.badge}</b> | שם: ${v.name}
+                </div>`).join('') : '<p class="text-slate-500">הכל הותאם בהצלחה!</p>';
+        }
+
+        window.handleSort = (col) => {
+            if(currentSort.column === col) {
+                currentSort.asc = !currentSort.asc;
+            } else {
+                currentSort.column = col;
+                currentSort.asc = true;
+            }
+            renderRosterTable();
+        };
+
+        // --- STREAMING_CHUNK:Rendering Tables & Visuals... ---
+        function renderSkeletonTable() {
+            let html = '';
+            for(let i=0; i<6; i++) {
+                html += `
+                <tr class="animate-pulse-fast border-b border-slate-800/50">
+                    <td class="px-4 py-4"><div class="h-4 bg-slate-800 rounded w-3/4 mb-2"></div><div class="h-3 bg-slate-800/50 rounded w-1/2"></div></td>
+                    <td class="px-4 py-4"><div class="h-4 bg-slate-800 rounded w-full mb-2"></div><div class="h-2 bg-slate-800 rounded-full w-full"></div></td>
+                    <td class="px-4 py-4"><div class="h-6 bg-slate-800 rounded w-20"></div></td>
+                    <td class="px-4 py-4"><div class="h-8 bg-slate-800 rounded w-full"></div></td>
+                    <td class="px-4 py-4"><div class="h-4 bg-slate-800 rounded w-1/2 mx-auto mb-2"></div><div class="h-4 bg-slate-800 rounded w-1/2 mx-auto"></div></td>
+                    <td class="px-4 py-4 flex justify-center"><div class="h-8 w-8 bg-slate-800 rounded-lg"></div></td>
+                </tr>`;
+            }
+            interactiveRoster.innerHTML = html;
+        }
+
+        function renderRosterTable() {
+            interactiveRoster.innerHTML = '';
+            const searchVal = searchBar.value.trim().toLowerCase();
+            const statusVal = statusFilter.value;
+            const normLimit = parseFloat(targetNormal.value) || 15, excLimit = parseFloat(targetException.value) || 5;
+
+            let filteredRoster = roster.filter(o => {
+                if (!o.categories.includes(activeCategory)) return false;
+                if (searchVal && !(o.name.toLowerCase().includes(searchVal) || o.badge.toLowerCase().includes(searchVal))) return false;
+                const limit = o.isException ? excLimit : normLimit;
+                const metTarget = o.hours >= limit;
+                if (statusVal === 'success' && !metTarget) return false;
+                if (statusVal === 'fail' && (metTarget || o.onVacation)) return false;
+                if (statusVal === 'vacation' && !o.onVacation) return false;
+                if (statusVal === 'exception' && !o.isException) return false;
+                return true;
+            });
+
+            filteredRoster.sort((a, b) => {
+                const limitA = a.isException ? excLimit : normLimit;
+                const limitB = b.isException ? excLimit : normLimit;
+                
+                let valA, valB;
+                if (currentSort.column === 'badge') {
+                    // Extracting numerical part for sorting purposes, otherwise pushing high
+                    valA = parseInt(a.badge.replace(/\D/g, '')) || 99999;
+                    valB = parseInt(b.badge.replace(/\D/g, '')) || 99999;
+                } else if (currentSort.column === 'hours') {
+                    valA = a.hours;
+                    valB = b.hours;
+                } else if (currentSort.column === 'missing') {
+                    valA = Math.max(0, limitA - a.hours);
+                    valB = Math.max(0, limitB - b.hours);
+                }
+
+                if (valA < valB) return currentSort.asc ? -1 : 1;
+                if (valA > valB) return currentSort.asc ? 1 : -1;
+                return 0;
+            });
+
+            if(filteredRoster.length === 0) {
+                interactiveRoster.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-500">לא נמצאו שוטרים התואמים לחיפוש.</td></tr>`;
+                return;
+            }
+
+            filteredRoster.forEach(o => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors';
+                
+                const limit = o.isException ? excLimit : normLimit;
+                const success = o.hours >= limit;
+                
+                let nameColorClass = 'text-white';
+                if (success) nameColorClass = 'text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]';
+                else if (o.onVacation) nameColorClass = 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]';
+                else nameColorClass = 'text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.3)]';
+
+                const percentage = Math.min(100, (o.hours / limit) * 100);
+                let barColor = success ? 'bg-emerald-500' : (percentage > 50 ? 'bg-blue-500' : 'bg-rose-500');
+                if (o.onVacation && !success) barColor = 'bg-amber-500';
+                
+                const missingHoursDecimal = Math.max(0, limit - o.hours);
+                const missingHtml = missingHoursDecimal > 0 
+                    ? `<span class="text-amber-400 font-bold bg-amber-400/10 px-2 py-1 rounded-lg border border-amber-400/20">${formatHoursDHM(missingHoursDecimal)} חסר</span>`
+                    : `<span class="text-emerald-400 font-bold flex items-center justify-end gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> עמד ביעד</span>`;
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3">
+                        <div class="font-bold ${nameColorClass} text-sm flex items-center gap-2">
+                            ${o.name}
+                            ${o.isException ? '<span class="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700" title="חריג">חריג</span>' : ''}
+                        </div>
+                        <div class="text-xs text-slate-400 mt-0.5 font-mono">${o.badge}</div>
+                    </td>
+                    <td class="px-4 py-3 font-mono">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-slate-200 font-bold text-[13px] bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700">${formatHoursDHM(o.hours)}</span>
+                            <span class="text-[10px] text-slate-500">יעד: ${formatHoursDHM(limit)}</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                            <div class="h-full ${barColor}" style="width: ${percentage}%"></div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        ${missingHtml}
+                    </td>
+                    <td class="px-4 py-3">
+                        <select onchange="updateOfficerRank('${o.badge}', this.value)" class="bg-slate-950 border border-slate-700 hover:border-blue-500 transition-colors rounded-lg px-2 py-1.5 text-xs text-slate-200 outline-none w-full">
+                            ${['Lieutenant','Sergeant','Corporal','Sr. Officer','Officer','Cadet','High Command'].map(r => `<option value="${r}" ${o.rank===r?'selected':''}>${r}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex flex-col gap-2 justify-center items-center">
+                            <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer hover:text-white transition-colors"><input type="checkbox" ${o.isException?'checked':''} onchange="toggleException('${o.badge}', this.checked)" class="rounded bg-slate-950 border-slate-700 text-blue-500 focus:ring-0"> שחקן חריג</label>
+                            <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer hover:text-white transition-colors"><input type="checkbox" ${o.onVacation?'checked':''} onchange="toggleVacation('${o.badge}', this.checked)" class="rounded bg-slate-950 border-slate-700 text-blue-500 focus:ring-0"> בחופשה</label>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="removeOfficer('${o.badge}')" class="text-slate-500 hover:text-rose-500 bg-slate-950 hover:bg-rose-500/10 p-2 rounded-lg transition-all" title="מחק שוטר">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    </td>
+                `;
+                interactiveRoster.appendChild(tr);
+            });
+
+            calculateStats();
+        }
+
+        // --- STREAMING_CHUNK:Updating Data & Charts... ---
+        function updateCharts(success, fail, vac, top5, excSuccess, excFail, excVac) {
+            Chart.defaults.color = '#cbd5e1';
+            Chart.defaults.font.family = "'Rubik', sans-serif";
+            
+            const pieOptions = { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } } }, cutout: '60%' };
+
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            if (pieChartInst) pieChartInst.destroy();
+            pieChartInst = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['עמדו ביעד', 'לא עמדו', 'בחופשה'],
+                    datasets: [{ data: [success, fail, vac], backgroundColor: ['#10b981', '#f43f5e', '#f59e0b'], borderColor: '#0f172a', borderWidth: 2, hoverOffset: 4 }]
+                },
+                options: pieOptions
+            });
+
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            if (barChartInst) barChartInst.destroy();
+            barChartInst = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: top5.map(o => o.name.split(' ')[0]),
+                    datasets: [{ label: 'שעות רשומות (עשרוני)', data: top5.map(o => o.hours), backgroundColor: '#3b82f6', borderRadius: 4 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => formatHoursDHM(ctx.raw) } } },
+                    scales: { y: { beginAtZero: true, grid: { color: '#1e293b', drawBorder: false } }, x: { grid: { display: false } } }
+                }
+            });
+
+            const ctxExcPie = document.getElementById('exceptionPieChart').getContext('2d');
+            if (excPieChartInst) excPieChartInst.destroy();
+            excPieChartInst = new Chart(ctxExcPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['עמדו ביעד', 'לא עמדו', 'בחופשה'],
+                    datasets: [{ data: [excSuccess, excFail, excVac], backgroundColor: ['#10b981', '#f43f5e', '#f59e0b'], borderColor: '#0f172a', borderWidth: 2, hoverOffset: 4 }]
+                },
+                options: pieOptions
+            });
+        }
+
+        function calculateStats() {
+            const list = roster.filter(o => o.categories.includes(activeCategory));
+            const normLimit = parseFloat(targetNormal.value) || 15, excLimit = parseFloat(targetException.value) || 5;
+            
+            const normalOfficers = list.filter(o => !o.isException);
+            const exceptions = list.filter(o => o.isException);
+            
+            let success = 0, fail = 0, vac = 0, totalHours = 0;
+            normalOfficers.forEach(o => {
+                totalHours += o.hours;
+                if (o.hours >= normLimit) success++; else if (o.onVacation) vac++; else fail++;
+            });
+
+            let excSuccess = 0, excFail = 0, excVac = 0;
+            exceptions.forEach(o => {
+                totalHours += o.hours;
+                if (o.hours >= excLimit) excSuccess++; else if (o.onVacation) excVac++; else excFail++;
+            });
+            
+            document.getElementById('statTotalHours').textContent = formatHoursDHM(totalHours);
+            document.getElementById('statTotal').textContent = list.length;
+            document.getElementById('statSuccess').textContent = success + excSuccess; 
+            document.getElementById('statFail').textContent = fail + excFail; 
+            document.getElementById('statVacation').textContent = vac + excVac; 
+
+            const excTotal = exceptions.length;
+            let excHtml = `
+                <div class="flex justify-between items-center py-1 border-b border-slate-800"><span class="text-slate-400">סה"כ שוטרים חריגים:</span> <span class="font-bold text-white">${excTotal}</span></div>
+                <div class="flex justify-between items-center py-1 border-b border-slate-800"><span class="text-slate-400">יעד שעות הנדרש:</span> <span class="font-bold text-blue-400 font-mono">${formatHoursDHM(excLimit)}</span></div>
+                <div class="flex justify-between items-center py-1 border-b border-slate-800"><span class="text-slate-400">עמדו ביעד:</span> <span class="font-bold text-emerald-400">${excSuccess}</span></div>
+                <div class="flex justify-between items-center py-1"><span class="text-slate-400">לא עמדו ביעד:</span> <span class="font-bold text-rose-400">${excFail}</span></div>
+            `;
+            if(excTotal === 0) excHtml = `<div class="text-slate-500 py-4 text-center">לא הוגדרו שחקנים חריגים במערכת.</div>`;
+            document.getElementById('exceptionStatsBox').innerHTML = excHtml;
+
+            const top5 = [...normalOfficers].filter(o => !o.onVacation).sort((a, b) => b.hours - a.hours).slice(0, 5);
+            updateCharts(success, fail, vac, top5, excSuccess, excFail, excVac);
+        }
+
+        // --- STREAMING_CHUNK:Building Export Reports... ---
+        window.updateOfficerRank = (b, r) => { roster.find(o=>o.badge===b).rank = r; buildReports(); };
+        window.toggleException = (b, c) => { roster.find(o=>o.badge===b).isException = c; buildReports(); renderRosterTable(); };
+        window.toggleVacation = (b, c) => { roster.find(o=>o.badge===b).onVacation = c; buildReports(); renderRosterTable(); };
+        window.removeOfficer = (b) => { roster = roster.filter(o=>o.badge!==b); buildReports(); renderRosterTable(); };
+
+        function formatDiscordMarkup(text) {
+            return text
+                .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/^#\s+(.*$)/gm, '<span class="block text-xl font-bold text-white mt-4 mb-2">$1</span>')
+                .replace(/^##\s+(.*$)/gm, '<span class="block text-lg font-bold text-white mt-3 mb-1 border-b border-slate-700 pb-1">$1</span>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
+                .replace(/\n/g, '<br>');
+        }
+
+        function buildReports() {
+            const normLimit = parseFloat(targetNormal.value) || 15;
+            const excLimit = parseFloat(targetException.value) || 5;
+            let dateRangeStr = reportWeekRange.value.trim().replace(" עד ", " - ");
+            
+            const activeRoster = roster.filter(o => o.categories.includes(activeCategory) && !o.isHidden).sort((a,b)=>(parseInt(a.badge.replace(/\D/g, ''))||99999)-(parseInt(b.badge.replace(/\D/g, ''))||99999));
+
+            const formatRow = (o) => {
+                const passed = o.hours >= (o.isException ? excLimit : normLimit);
+                const emoji = passed ? '✅' : (o.onVacation ? '🏖️' : '❌');
+                return `${emoji} ${o.badge} | ${o.name} = ${formatHoursDHM(o.hours)}`;
+            };
+            const formatSec = (list) => list.length ? list.map((o,i) => `${i+1}. ${formatRow(o)}`).join('\n') + '\n' : '-\n';
+
+            let doc1 = `# 🚓 LSPD PATROL UNIT REPORT (${dateRangeStr})\n\n`;
+            doc1 += `## 👮 Command Patrol\n`;
+            doc1 += `**Lieutenant:**\n` + formatSec(activeRoster.filter(o=>o.rank==='Lieutenant'));
+            doc1 += `\n**Sergeant:**\n` + formatSec(activeRoster.filter(o=>o.rank==='Sergeant'));
+            doc1 += `\n**Corporal:**\n` + formatSec(activeRoster.filter(o=>o.rank==='Corporal'));
+
+            doc1 += `\n## 🚔 Unit\n`;
+            doc1 += `**Sr. Officer:**\n` + formatSec(activeRoster.filter(o=>o.rank==='Sr. Officer'));
+            doc1 += `\n**Officer:**\n` + formatSec(activeRoster.filter(o=>o.rank==='Officer' && !o.isException));
+            doc1 += `\n**Cadet:**\n` + formatSec(activeRoster.filter(o=>o.rank==='Cadet'));
+
+            const vacs = activeRoster.filter(o=>o.onVacation);
+            doc1 += `\n## 🏖️ חופשות מוצדקות\n`;
+            doc1 += vacs.length ? vacs.map((o,i)=>`${i+1}. ${o.badge} | ${o.name} [${o.vacationDates || 'לא צוין'}] | [${o.vacationReason || 'לא צוין'}]`).join('\n')+'\n' : '-\n';
+
+            const excs = activeRoster.filter(o=>o.isException);
+            doc1 += `\n## ⚠️ חריגים\n**Officer (חריג):**\n`;
+            doc1 += excs.length ? excs.map((o,i)=>`${i+1}. ${formatRow(o)}`).join('\n')+'\n' : '-\n';
+
+            embed1Content = doc1;
+
+            let doc2 = `## 🚨 סיכום שוטרים שלא עמדו ביעד (מתחת ל-${formatHoursDHM(normLimit)}):\n*לא כולל חריגים וחופשות*\n\n`;
+            const fails = activeRoster.filter(o => !o.isException && !o.onVacation && o.hours < normLimit);
+            
+            ['Lieutenant', 'Sergeant', 'Corporal', 'Sr. Officer', 'Officer', 'Cadet'].forEach(r => {
+                const rFails = fails.filter(o=>o.rank===r);
+                if(rFails.length > 0) doc2 += `**${r}:**\n` + rFails.map(o=>`❌ ${o.badge} | ${o.name} = ${formatHoursDHM(o.hours)}`).join('\n') + '\n\n';
+            });
+            if(fails.length === 0) doc2 += "אין שוטרים שחרגו מהיעד! כל הכבוד! 🎉\n\n";
+
+            doc2 += `## 🏆 TOP 5 של השבוע\n`;
+            const top5 = [...activeRoster].filter(o=>!o.isException && !o.onVacation).sort((a,b)=>b.hours-a.hours).slice(0,5);
+            doc2 += top5.length ? top5.map((o,i)=>`${i+1}. ${o.badge} | ${o.name} = ${formatHoursDHM(o.hours)}`).join('\n') : '-';
+
+            embed2Content = doc2;
+
+            previewEmbed1.innerHTML = formatDiscordMarkup(embed1Content);
+            previewEmbed2.innerHTML = formatDiscordMarkup(embed2Content);
+            discordRawText.value = embed1Content + "\n\n-------------------------------\n\n" + embed2Content;
+        }
+
+        // --- STREAMING_CHUNK:Finalizing Event Listeners... ---
+        processBtn.addEventListener('click', () => {
+            const pTxt = playtimeInput.value.trim(), vTxt = vacationInput.value.trim();
+            if (!pTxt) return showToast('חסר קובץ שעות', 'error');
+            
+            processBtn.disabled = true;
+            processBtn.innerHTML = `
+                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                מעבד נתונים...
+            `;
+            
+            switchTab('table');
+            renderSkeletonTable();
+
+            setTimeout(() => {
+                roster = parsePlaytimeData(pTxt);
+                parsedVacations = vTxt ? parseVacationData(vTxt) : [];
+                correlateData(); 
+                renderRosterTable(); 
+                buildReports();
+                showToast('נתונים עובדו בהצלחה!', 'success');
+                
+                processBtn.disabled = false;
+                processBtn.innerHTML = 'עבד ונתח נתונים';
+            }, 600);
+        });
+
+        resetAllBtn.addEventListener('click', () => {
+            playtimeInput.value = ''; vacationInput.value = ''; roster = []; parsedVacations = [];
+            renderRosterTable(); buildReports(); showToast('המערכת אופסה', 'warning');
+        });
+
+        demoPlaytimeBtn.addEventListener('click', () => {
+            playtimeInput.value = SAMPLE_PLAYTIME; vacationInput.value = SAMPLE_VACATIONS;
+            showToast('נתוני דוגמה נטענו, יש ללחוץ על עיבוד נתונים', 'info');
+        });
+
+        searchBar.addEventListener('input', renderRosterTable);
+        statusFilter.addEventListener('change', renderRosterTable);
+        targetNormal.addEventListener('input', () => { renderRosterTable(); buildReports(); });
+        targetException.addEventListener('input', () => { renderRosterTable(); buildReports(); });
+
+        discordCopyBtn.addEventListener('click', () => {
+            const rawText = discordRawText.value;
+            if(!rawText) return showToast('אין מה להעתיק', 'error');
+            
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = rawText;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast('הטקסט בפורמט דיסקורד (Markdown) הועתק ללוח! 📋', 'success');
+            } catch (err) {
+                showToast('שגיאה בהעתקה, נסה לבחור ולהעתיק ידנית', 'error');
+            }
+            
+            document.body.removeChild(tempTextArea);
+        });
+
+        function chunkDiscordText(str, maxLength) {
+            const chunks = [];
+            let current = "";
+            const lines = str.split('\n');
+            for (const line of lines) {
+                if (current.length + line.length + 1 > maxLength) {
+                    chunks.push(current);
+                    current = line + '\n';
+                } else {
+                    current += line + '\n';
+                }
+            }
+            if (current) chunks.push(current);
+            return chunks;
+        }
+
+        sendWebhookBtn.addEventListener('click', async () => {
+            const url = DISCORD_WEBHOOK_URL;
+            if (!url || url === "הכנס_כאן_את_כתובת_הוובהוק_שלך") return showToast('עליך להגדיר כתובת Webhook בקוד המקור תחילה', 'error');
+            if (!embed1Content) return showToast('אין דוח מוכן לשליחה', 'error');
+
+            sendWebhookBtn.disabled = true;
+            sendWebhookBtn.textContent = 'משגר...';
+
+            const embeds = [];
+            const embed1Chunks = chunkDiscordText(embed1Content, 4000);
+            embed1Chunks.forEach((chunk, index) => {
+                embeds.push({ title: index === 0 ? "🚓 LSPD REPORT GENERATED" : "🚓 LSPD REPORT (המשך)", description: chunk, color: 3447003 });
+            });
+
+            const embed2Chunks = chunkDiscordText(embed2Content, 4000);
+            embed2Chunks.forEach((chunk, index) => {
+                embeds.push({
+                    description: chunk, color: 15158332,
+                    footer: index === embed2Chunks.length - 1 ? { text: "LSPD Automated Activity Tracker " } : undefined,
+                    timestamp: index === embed2Chunks.length - 1 ? new Date().toISOString() : undefined
+                });
+            });
+
+            const payload = { username: "LSPD Tracker Time Report", avatar_url: "https://r2.fivemanage.com/BFPgIwTO3MDlDBlmMfFdr/Gemini_Generated_Image_851o95851o95851o.png", embeds: embeds };
+
+            try {
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (response.ok) showToast('הדוח שוגר כ-Embed לדיסקורד! 🎉', 'success');
+                else throw new Error(`HTTP Error: ${response.status}`);
+            } catch (error) {
+                showToast(`שגיאה בשיגור: ${error.message}`, 'error');
+                console.error('Webhook Error:', error);
+            } finally {
+                sendWebhookBtn.disabled = false;
+                sendWebhookBtn.textContent = 'שגר לדיסקורד כ-Embed 🚀';
+            }
+        });
+
+        const manualModal = document.getElementById('manualModal');
+        document.getElementById('addNewOfficerBtn').addEventListener('click', () => manualModal.classList.remove('hidden'));
+        document.getElementById('modalCancelBtn').addEventListener('click', () => manualModal.classList.add('hidden'));
+        
+        document.getElementById('manualAddForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const badge = document.getElementById('mBadge').value.trim();
+            const name = document.getElementById('mName').value.trim();
+            if (!badge || !name) return;
+            if (roster.find(o=>o.badge===badge)) return showToast('שוטר קיים במערכת', 'error');
+            
+            roster.push({
+                badge, name, hours: parseFloat(document.getElementById('mHours').value)||0,
+                isException: document.getElementById('mIsException').checked,
+                categories: [activeCategory], rank: document.getElementById('mRank').value,
+                onVacation: document.getElementById('mOnVacation').checked,
+                vacationDates: '', vacationReason: ''
+            });
+            manualModal.classList.add('hidden');
+            renderRosterTable(); buildReports(); showToast('שוטר הוסף בהצלחה', 'success');
+        });
+
+    </script>
+</body>
+</html>
