@@ -568,11 +568,15 @@ function loadAllUsers() {
     var viewSelect = document.getElementById('boss-view-notes-user');
     var promoteSelect = document.getElementById('boss-promote-user');
     var users = []; snap.forEach(function(doc){ users.push({id:doc.id,data:doc.data()}); });
-    el.innerHTML = users.map(function(u) {
+    window._userIds = {};
+    el.innerHTML = users.map(function(u, i) {
       var d = u.data;
-      return '<div class="user-row"><div class="user-info"><div class="u-name">'+d.name+'</div><div class="u-role">'+(ROLE_LABELS[d.role]||d.role)+' • '+(d.status==='pending'?'⏳ ממתין':'✅ פעיל')+(d.isAdmin?' • 👑 מנהל':'')+'</div></div>'+
+      window._userIds['u'+i] = u.id;
+      var statusTxt = d.status==='pending' ? '⏳ ממתין' : '✅ פעיל';
+      var adminTxt = d.isAdmin ? ' • 👑 מנהל' : '';
+      return '<div class="user-row"><div class="user-info"><div class="u-name">'+d.name+'</div><div class="u-role">'+(ROLE_LABELS[d.role]||d.role)+' - '+statusTxt+adminTxt+'</div></div>'+
         '<div class="user-actions">'+
-        '<button class="ua-btn danger" data-i="'+i+'" onclick="deleteUser(window._userIds[this.getAttribute(\"data-i\")])">🗑️</button>'+
+        '<button class="ua-btn danger" data-i="'+i+'" onclick="deleteUser(window._userIds[this.dataset.i])">X</button>'+
         '</div></div>';
     }).join('');
     // Update selects
