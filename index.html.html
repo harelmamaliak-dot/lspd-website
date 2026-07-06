@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Los Santos Police</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js">
+
+function toggle(header) {
+  var body = header.nextElementSibling;
+  var arrow = header.querySelector('.arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function showTab(tab) {
+  document.getElementById('study-tab').style.display = tab === 'study' ? 'block' : 'none';
+  document.getElementById('quiz-tab').style.display = tab === 'quiz' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach(function(b, i) {
+    b.classList.toggle('active', (i === 0 && tab === 'study') || (i === 1 && tab === 'quiz'));
+  });
+}
+
+var QUESTIONS = [
+  { q: 'מה הפעולה הראשונה בנוהל עלייה למשמרת?', opts: ['לעלות לקשר 1', 'לכתוב 10-8 ב-pchat', 'להדליק bodycam', 'לוודא פק"ל'], ans: 1, exp: 'הפעולה הראשונה היא לכתוב 10-8 ב-pchat, ואז לעלות לקשר 1.' },
+  { q: 'כמה הפסקות מותרות ביום?', opts: ['1', '2', '3', '4'], ans: 2, exp: 'ניתן לצאת ל-3 הפסקות ביום מקסימום, כל הפסקה עד 15 דקות.' },
+  { q: 'מה זמן ההפסקה המותר?', opts: ['10 דקות', '15 דקות', '20 דקות', '30 דקות'], ans: 1, exp: 'זמן ההפסקה המותר הוא עד 15 דקות.' },
+  { q: 'בנוהל עצירה שגרתית, מתי יוצאים מהניידת?', opts: ['מיד עם עצירה', 'אחרי שהנהג שם מפתחות על הרכב', 'אחרי שהנהג יוצא', 'כל עת'], ans: 1, exp: 'רק לאחר שהנהג שם מפתחות על גג הרכב, השוטר שלצד הנהג יוצא מהניידת.' },
+  { q: 'בזווית כמה מעלות יש לעצור מאחורי הרכב בעצירה שגרתית?', opts: ['30 מעלות', '45 מעלות', '60 מעלות', '90 מעלות'], ans: 1, exp: 'יש לעצור מאחורי הרכב בזווית של 45 מעלות כלפי הכביש.' },
+  { q: 'כמה ניידות נדרשות לקוד 5 (עצירה בסיכון)?', opts: ['2 ניידות, 4 שוטרים', '3 ניידות, 6 שוטרים', '2 ניידות, 6 שוטרים', '4 ניידות, 8 שוטרים'], ans: 1, exp: 'מינימום 3 ניידות ו-6 שוטרים לביצוע קוד 5.' },
+  { q: 'כמה דקות יש להמתין לפני מתן טאקל במרדף רגלי?', opts: ['30 שניות', '1 דקה', '2 דקות', '3 דקות'], ans: 1, exp: 'ניתן לתת טאקל לאחר דקה מתחילת המרדף, דקה בין כל טאקל.' },
+  { q: 'כמה דקות יש להמתין לפני מתן טייזר במרדף רגלי?', opts: ['1 דקה', '2 דקות', '3 דקות', '5 דקות'], ans: 1, exp: 'ניתן לתת טייזר 2 דקות מתחילת המרדף, 2 דקות בין כל שימוש.' },
+  { q: 'מה קורה אם לא הוקראו זכויות ישר אחרי אזיקה ללא סיבה?', opts: ['אין עונש', 'הפחתת 10% מהעונש', 'הפחתת 30% מהעונש', 'ביטול המעצר'], ans: 2, exp: 'אם לא הוקראו זכויות ישר אחרי אזיקה ללא סיבה מוצדקת — הפחתת 30% מהעונש.' },
+  { q: 'מה אחוז ההפחתה מהעונש אם לא הוקראו זכויות לפני פתיחת Incident?', opts: ['10%', '30%', '50%', '70%'], ans: 3, exp: 'אם לא הוקראו זכויות לפני פתיחת האינסידנט — הפחתת 70% מהעונש.' },
+  { q: 'מה המהירות המקסימלית למתן פיט?', opts: ['100 קמ"ש', '120 קמ"ש', '135 קמ"ש', '150 קמ"ש'], ans: 2, exp: 'פיט ניתן עד 135 קמ"ש בדופן האחורי של הרכב בלבד.' },
+  { q: 'כמה אחרי כמה דקות ממרדף ניתן לתת פיט?', opts: ['2 דקות', '3 דקות', '4 דקות', '5 דקות'], ans: 2, exp: 'ניתן לתת פיט לאחר כ-4 דקות מתחילת מרדף.' },
+  { q: 'כמה יריות אזהרה לאוויר יש לירות לפני ירי לפלג גוף תחתון?', opts: ['1', '2', '3', '4'], ans: 2, exp: 'יש להזהיר מילולית, ואז לירות 3 יריות אזהרה לאוויר לפני ירי לפלג גוף תחתון.' },
+  { q: 'מה 3 התנאים לפתיחה בירי?', opts: ['נשק + מרדף + כוונה', 'אמצעי + כוונה + יכולת', 'איום + נשק + אישור', 'כוונה + יכולת + פקודה'], ans: 1, exp: 'שלושת התנאים הם: אמצעי (החשוד מחזיק נשק), כוונה (כוונה מיידית לפגוע), יכולת (יכולת פיזית לממש).' },
+  { q: 'מה לובשים לפני כניסה לחדר תדריכים?', opts: ['מדים מלאים כולל ווסט', 'מדים ללא ווסט, כובע ומשקפיים', 'לבוש אזרחי', 'כל מה שרוצים'], ans: 1, exp: 'יש להוריד ווסט, כובע ומשקפי שמש לפני הכניסה לחדר תדריכים.' },
+];
+
+var current = 0, score = 0, answered = false;
+var shuffled = [];
+
+function startQuiz() {
+  current = 0; score = 0; answered = false;
+  shuffled = QUESTIONS.slice().sort(function() { return Math.random() - 0.5; }).slice(0, 15);
+  document.getElementById('quiz-start').style.display = 'none';
+  document.getElementById('quiz-result').style.display = 'none';
+  document.getElementById('quiz-card').style.display = 'block';
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  var q = shuffled[current];
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('q-num').textContent = (current + 1) + ' / ' + shuffled.length;
+  document.getElementById('prog-fill').style.width = ((current / shuffled.length) * 100) + '%';
+  document.getElementById('q-explain').style.display = 'none';
+  document.getElementById('btn-next').style.display = 'none';
+
+  var opts = document.getElementById('q-options');
+  opts.innerHTML = '';
+  var indices = q.opts.map(function(_, i) { return i; }).sort(function() { return Math.random() - 0.5; });
+  indices.forEach(function(i) {
+    var btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = q.opts[i];
+    btn.dataset.idx = i;
+    btn.onclick = function() { answer(this, q.ans); };
+    opts.appendChild(btn);
+  });
+}
+
+function answer(btn, correct) {
+  if (answered) return;
+  answered = true;
+  var chosen = parseInt(btn.dataset.idx);
+  document.querySelectorAll('.option').forEach(function(b) {
+    b.classList.add('disabled');
+    if (parseInt(b.dataset.idx) === correct) b.classList.add('correct');
+  });
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    score++;
+  } else {
+    btn.classList.add('wrong');
+  }
+  var expEl = document.getElementById('q-explain');
+  expEl.textContent = shuffled[current].exp;
+  expEl.style.display = 'block';
+  document.getElementById('btn-next').style.display = 'block';
+  document.getElementById('btn-next').textContent = current < shuffled.length - 1 ? 'הבא ←' : 'סיום ✓';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= shuffled.length) {
+    showResult();
+  } else {
+    showQuestion();
+  }
+}
+
+function showResult() {
+  document.getElementById('quiz-card').style.display = 'none';
+  var result = document.getElementById('quiz-result');
+  result.style.display = 'block';
+  var pct = Math.round((score / shuffled.length) * 100);
+  var scoreEl = document.getElementById('result-score');
+  scoreEl.textContent = score + '/' + shuffled.length;
+  scoreEl.style.color = pct >= 80 ? '#56d364' : pct >= 60 ? '#ffa500' : '#ff7b72';
+  var msgs = ['זקוק לעוד לימוד 📚', 'כמעט! תחזור על הנהלים 🔄', 'לא רע! עוד קצת ✊', 'כל הכבוד! 👏', 'מושלם! מוכן לבחינה 🏆'];
+  var msgIdx = pct < 40 ? 0 : pct < 60 ? 1 : pct < 75 ? 2 : pct < 90 ? 3 : 4;
+  document.getElementById('result-msg').textContent = msgs[msgIdx] + ' — ' + pct + '%';
+}
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+:root {
+  --bg: #0d0d0f;
+  --surface: #16161a;
+  --surface2: #1e1e24;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0f0f2;
+  --text2: #a0a0b0;
+  --text3: #606070;
+  --accent: #4f8ef7;
+  --accent2: #3a7ae0;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --gold: #e2b96f;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+
+/* Auth screen */
+#auth-screen {
+  display: flex; align-items: center; justify-content: center;
+  height: 100vh; background: var(--bg);
+  background-image: radial-gradient(ellipse at 30% 20%, rgba(79,142,247,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(79,142,247,0.04) 0%, transparent 60%);
+}
+.auth-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 40px; width: 400px; max-width: 95vw;
+}
+.auth-logo { text-align: center; margin-bottom: 32px; }
+.auth-logo .shield { font-size: 2.5rem; margin-bottom: 8px; }
+.auth-logo h1 { font-family: 'Rajdhani', sans-serif; font-size: 1.6rem; font-weight: 700; letter-spacing: 3px; color: var(--text); }
+.auth-logo p { font-size: 0.75rem; color: var(--text3); letter-spacing: 2px; margin-top: 4px; }
+.auth-tabs { display: flex; background: var(--bg); border-radius: 8px; padding: 4px; margin-bottom: 28px; }
+.auth-tab { flex: 1; padding: 8px; text-align: center; font-size: 0.82rem; font-weight: 500; color: var(--text2); cursor: pointer !important; border-radius: 6px; transition: all 0.2s; }
+.auth-tab.active { background: var(--surface2); color: var(--text); }
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 0.75rem; font-weight: 500; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.5px; }
+.field input, .field select {
+  width: 100%; background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 10px 14px; color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 0.85rem; outline: none; transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.field select option { background: var(--surface2); }
+.btn-primary {
+  width: 100%; background: var(--accent); border: none; border-radius: 8px;
+  padding: 11px; color: #fff; font-family: 'Inter', sans-serif; font-weight: 600;
+  font-size: 0.88rem; cursor: pointer !important; transition: all 0.2s; margin-top: 8px;
+}
+.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+.auth-error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 7px; padding: 10px 14px; font-size: 0.78rem; color: var(--danger); margin-bottom: 14px; display: none; }
+.pending-note { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 7px; padding: 10px 14px; font-size: 0.78rem; color: var(--warning); margin-top: 12px; display: none; }
+
+/* Main app */
+#app { display: none; flex-direction: column; height: 100vh; }
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 56px; background: var(--surface);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.header-logo { font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: 3px; color: var(--text); }
+.header-logo span { color: var(--accent); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-user { font-size: 0.78rem; color: var(--text2); }
+.header-role { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.role-cadet { background: rgba(56,189,248,0.15); color: #38bdf8; }
+.role-officer { background: rgba(165,148,249,0.15); color: #a594f9; }
+.role-fto { background: rgba(165,148,249,0.15); color: #a594f9; }
+.role-command { background: rgba(251,191,36,0.15); color: var(--warning); }
+.role-high_command { background: rgba(248,113,113,0.15); color: var(--danger); }
+.btn-logout { background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 4px 12px; color: var(--text2); font-size: 0.75rem; cursor: pointer !important; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+/* Content */
+#content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+/* Pending screen */
+#pending-screen {
+  display: none; align-items: center; justify-content: center;
+  flex: 1; flex-direction: column; gap: 16px;
+}
+.pending-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; padding: 40px; text-align: center; max-width: 440px; }
+.pending-card .p-icon { font-size: 3rem; margin-bottom: 16px; }
+.pending-card h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; color: var(--warning); margin-bottom: 10px; }
+.pending-card p { font-size: 0.83rem; color: var(--text2); line-height: 1.7; }
+
+/* Role screen */
+#role-screen {
+  display: none; align-items: center; justify-content: center;
+  flex: 1; flex-direction: column;
+  background-image: radial-gradient(ellipse at 50% 30%, rgba(79,142,247,0.05) 0%, transparent 60%);
+  position: relative; overflow: hidden;
+}
+#role-screen::before { content: '🛡️'; position: absolute; font-size: 400px; opacity: 0.02; top: 50%; left: 50%; transform: translate(-50%,-55%); pointer-events: none; }
+.role-title { text-align: center; margin-bottom: 32px; position: relative; z-index: 1; }
+.role-title p { font-size: 0.72rem; color: var(--text3); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+.role-title h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--text); }
+.role-divider { width: 48px; height: 1px; background: linear-gradient(90deg,transparent,var(--accent),transparent); margin: 12px auto 32px; }
+.cards-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; position: relative; z-index: 1; max-width: 900px; }
+.portal-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 28px 24px; width: 180px; text-align: center;
+  cursor: pointer !important; transition: all 0.2s ease; position: relative; overflow: hidden;
+}
+.portal-card::after { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; background: radial-gradient(ellipse at 50% 0%, var(--card-glow, rgba(79,142,247,0.15)), transparent 70%); }
+.portal-card:hover { transform: translateY(-3px); border-color: var(--card-color, var(--accent)); box-shadow: 0 0 20px var(--card-glow, rgba(79,142,247,0.2)); }
+.portal-card:hover::after { opacity: 1; }
+.portal-card .ci { font-size: 2.4rem; margin-bottom: 12px; display: block; transition: transform 0.2s; }
+.portal-card:hover .ci { transform: scale(1.1); }
+.portal-card .cn { font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: 1px; }
+.portal-card .cd { font-size: 0.68rem; color: var(--text3); margin-top: 5px; }
+
+/* FTO sidebar */
+#fto-sidebar {
+  display: none; position: fixed; bottom: 20px; left: 20px; z-index: 100;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 16px; min-width: 200px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+#fto-sidebar h4 { font-size: 0.7rem; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+.cadet-assigned { display: flex; flex-direction: column; gap: 2px; }
+.cadet-name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.cadet-tag { font-size: 0.72rem; color: var(--accent); }
+.no-cadet { font-size: 0.78rem; color: var(--text3); }
+
+/* Portal screen */
+#portal-screen { display: none; flex-direction: column; flex: 1; }
+.portal-topbar { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.portal-back { background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 5px 14px; color: var(--text2); font-size: 0.78rem; cursor: pointer !important; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.portal-back:hover { color: var(--text); border-color: var(--border2); }
+.portal-name { font-size: 0.82rem; color: var(--text3); }
+.portal-iframe { flex: 1; border: none; width: 100%; }
+
+/* Boss Menu */
+#boss-screen { display: none; flex-direction: column; flex: 1; overflow-y: auto; padding: 24px; }
+.boss-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.boss-header h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--text); letter-spacing: 1px; }
+.boss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.boss-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+.boss-card h3 { font-size: 0.72rem; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.user-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.user-row:last-child { border-bottom: none; }
+.user-info .u-name { font-size: 0.83rem; font-weight: 600; color: var(--text); }
+.user-info .u-role { font-size: 0.7rem; color: var(--text3); margin-top: 2px; }
+.user-actions { display: flex; gap: 6px; }
+.ua-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 3px 10px; font-size: 0.7rem; cursor: pointer !important; transition: all 0.15s; color: var(--text2); font-family: 'Inter', sans-serif; }
+.ua-btn:hover { border-color: var(--accent); color: var(--accent); }
+.ua-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+.ua-btn.success:hover { border-color: var(--success); color: var(--success); }
+.boss-form { display: flex; flex-direction: column; gap: 10px; }
+.boss-form input, .boss-form select, .boss-form textarea {
+  background: var(--bg); border: 1px solid var(--border2); border-radius: 7px;
+  padding: 8px 12px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.82rem; outline: none;
+}
+.boss-form textarea { resize: vertical; min-height: 60px; }
+.boss-form input:focus, .boss-form select:focus, .boss-form textarea:focus { border-color: var(--accent); }
+.boss-submit { background: var(--accent); border: none; border-radius: 7px; padding: 8px; color: #fff; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.8rem; cursor: pointer !important; transition: background 0.2s; }
+.boss-submit:hover { background: var(--accent2); }
+.notes-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
+.note-item { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; }
+.note-item .note-author { font-size: 0.68rem; color: var(--text3); margin-bottom: 4px; }
+.note-item .note-text { font-size: 0.8rem; color: var(--text2); }
+
+/* Mouse glow */
+#glow-canvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; }
+
+  /* ── CADET STUDY ── */
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+  
+  /* Header */
+  .top-bar { background: #161b22; border-bottom: 1px solid #30363d; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  .top-bar h1 { font-size: 1rem; font-weight: 600; color: #58a6ff; }
+  .tab-btns { display: flex; gap: 8px; margin-right: auto; }
+  .tab-btn { background: none; border: 1px solid #30363d; border-radius: 6px; padding: 6px 16px; color: #8b949e; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+  .tab-btn.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+  
+  /* Study */
+  #study-tab { padding: 24px; max-width: 860px; margin: 0 auto; }
+  .procedure { background: #161b22; border: 1px solid #30363d; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .proc-header { padding: 14px 18px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: 0.92rem; color: #58a6ff; }
+  .proc-header:hover { background: #1c2128; }
+  .proc-body { padding: 16px 18px; border-top: 1px solid #30363d; font-size: 0.85rem; line-height: 1.9; color: #c9d1d9; display: none; }
+  .proc-body.open { display: block; }
+  .proc-body ol, .proc-body ul { padding-right: 20px; margin: 8px 0; }
+  .proc-body li { margin-bottom: 6px; }
+  .proc-body .warn { background: rgba(255,166,0,0.1); border: 1px solid rgba(255,166,0,0.3); border-radius: 6px; padding: 8px 12px; margin-top: 10px; color: #ffa500; font-size: 0.82rem; }
+  .proc-body .tag { display: inline-block; background: #1f6feb22; border: 1px solid #1f6feb; border-radius: 4px; padding: 1px 8px; font-size: 0.75rem; color: #58a6ff; margin: 2px; }
+  .arrow { transition: transform 0.2s; }
+  .arrow.open { transform: rotate(180deg); }
+  
+  /* Quiz */
+  #quiz-tab { padding: 24px; max-width: 700px; margin: 0 auto; display: none; }
+  .quiz-start { text-align: center; padding: 60px 20px; }
+  .quiz-start h2 { font-size: 1.5rem; margin-bottom: 10px; color: #58a6ff; }
+  .quiz-start p { color: #8b949e; margin-bottom: 30px; font-size: 0.88rem; }
+  .btn-start { background: #1f6feb; border: none; border-radius: 8px; padding: 12px 32px; color: #fff; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+  .btn-start:hover { background: #388bfd; }
+  
+  .quiz-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 28px; display: none; }
+  .quiz-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .progress-bar { flex: 1; height: 4px; background: #30363d; border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: #1f6feb; border-radius: 2px; transition: width 0.3s; }
+  .q-num { font-size: 0.75rem; color: #8b949e; white-space: nowrap; }
+  .question { font-size: 1rem; font-weight: 600; margin-bottom: 20px; line-height: 1.6; color: #e6edf3; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option { background: #1c2128; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; cursor: pointer; font-size: 0.88rem; transition: all 0.2s; text-align: right; }
+  .option:hover:not(.disabled) { border-color: #1f6feb; background: #1f6feb15; }
+  .option.correct { border-color: #2ea043; background: #2ea04320; color: #56d364; }
+  .option.wrong { border-color: #da3633; background: #da363320; color: #ff7b72; }
+  .option.disabled { cursor: default; }
+  .explain { margin-top: 14px; padding: 12px 14px; background: #1c2128; border: 1px solid #30363d; border-radius: 8px; font-size: 0.82rem; color: #8b949e; line-height: 1.6; display: none; }
+  .btn-next { margin-top: 16px; background: #1f6feb; border: none; border-radius: 8px; padding: 10px 24px; color: #fff; font-size: 0.88rem; cursor: pointer; display: none; }
+  
+  .quiz-result { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 40px; text-align: center; display: none; }
+  .result-score { font-size: 3rem; font-weight: 700; margin-bottom: 8px; }
+  .result-msg { font-size: 1rem; color: #8b949e; margin-bottom: 24px; }
+  .btn-retry { background: #1f6feb; border: none; border-radius: 8px; padding: 10px 24px; color: #fff; font-size: 0.88rem; cursor: pointer; }
+  
+</style>
+</head>
+<body>
+<canvas id="glow-canvas"></canvas>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="shield">🛡️</div>
+      <h1>LOS SANTOS PD</h1>
+      <p>PATROL UNIT</p>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">התחברות</div>
+      <div class="auth-tab" onclick="switchTab('register')">הרשמה</div>
+    </div>
+    <div id="auth-error" class="auth-error"></div>
+
+    <!-- Login -->
+    <div id="login-form">
+      <div class="field"><label>שם משתמש</label><input type="text" id="l-username" placeholder="השם שלך" /></div>
+      <div class="field"><label>סיסמה</label><input type="password" id="l-password" placeholder="••••••••" /></div>
+      <button class="btn-primary" onclick="doLogin()">כניסה למערכת</button>
+    </div>
+
+    <!-- Register -->
+    <div id="register-form" style="display:none;">
+      <div class="field"><label>שם מלא</label><input type="text" id="r-name" placeholder="ג'ון דו" /></div>
+      <div class="field"><label>שם משתמש</label><input type="text" id="r-username" placeholder="בחר שם משתמש" /></div>
+      <div class="field"><label>דרגה</label>
+        <select id="r-role">
+          <option value="cadet">קאדט</option>
+          <option value="officer">שוטר</option>
+          <option value="fto">FTO</option>
+          <option value="command">פיקוד</option>
+          <option value="high_command">פיקוד גבוה</option>
+        </select>
+      </div>
+      <div class="field"><label>סיסמה</label><input type="password" id="r-password" placeholder="מינימום 6 תווים" /></div>
+      <button class="btn-primary" onclick="doRegister()">הרשמה</button>
+      <div id="pending-note" class="pending-note">⏳ דרגת פיקוד דורשת אישור מנהל. תוכל להיכנס לאחר האישור.</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-logo">LOS <span>SANTOS</span> PD</div>
+    <div class="header-right">
+      <span class="header-user" id="header-username"></span>
+      <span class="header-role" id="header-role-badge"></span>
+      <button class="btn-logout" onclick="doLogout()">יציאה</button>
+    </div>
+  </header>
+
+  <div id="content">
+    <!-- Pending -->
+    <div id="pending-screen">
+      <div class="pending-card">
+        <div class="p-icon">⏳</div>
+        <h2>ממתין לאישור</h2>
+        <p>בקשתך נשלחה למנהל המערכת.<br>תוכל להיכנס לאחר שהבקשה תאושר.<br><br>
+        <span style="color:var(--text3);font-size:0.75rem;">לפניות: פנה למפקד בדיסקורד</span></p>
+      </div>
+    </div>
+
+    <!-- Role/Category screen -->
+    <div id="role-screen">
+      <div class="role-title">
+        <p>ברוך הבא</p>
+        <h2>בחר קטגוריה</h2>
+      </div>
+      <div class="role-divider"></div>
+      <div class="cards-grid" id="portal-cards"></div>
+    </div>
+
+    <!-- Portal -->
+    <div id="portal-screen">
+      <div class="portal-topbar">
+        <button class="portal-back" onclick="closePortal()">← חזור</button>
+        <span class="portal-name" id="portal-name"></span>
+      </div>
+      <iframe class="portal-iframe" id="portal-iframe" src=""></iframe>
+    </div>
+
+    <!-- Boss Menu -->
+    <div id="boss-screen">
+      <div class="boss-header">
+        <h2>🔧 Boss Menu</h2>
+        <button class="portal-back" onclick="showRoleScreen()">← חזור</button>
+      </div>
+      <div class="boss-grid">
+        <!-- Pending approvals -->
+        <div class="boss-card">
+          <h3>⏳ ממתינים לאישור</h3>
+          <div id="boss-pending-list"><span style="font-size:0.78rem;color:var(--text3);">טוען...</span></div>
+        </div>
+        <!-- All users -->
+        <div class="boss-card">
+          <h3>👥 כל המשתמשים</h3>
+          <div id="boss-users-list"><span style="font-size:0.78rem;color:var(--text3);">טוען...</span></div>
+        </div>
+        <!-- Assign cadet to FTO -->
+        <div class="boss-card">
+          <h3>🎓 שיוך קאדט ל-FTO</h3>
+          <div class="boss-form">
+            <select id="boss-fto-select"><option value="">בחר FTO...</option></select>
+            <input type="text" id="boss-cadet-name" placeholder="שם הקאדט" />
+            <input type="text" id="boss-cadet-tag" placeholder="תג הקאדט" />
+            <button class="boss-submit" onclick="assignCadet()">שייך קאדט</button>
+          </div>
+        </div>
+        <!-- Notes -->
+        <div class="boss-card">
+          <h3>📝 הוסף נוט לשוטר</h3>
+          <div class="boss-form">
+            <select id="boss-note-user"><option value="">בחר שוטר...</option></select>
+            <textarea id="boss-note-text" placeholder="כתוב נוט..."></textarea>
+            <button class="boss-submit" onclick="addNote()">הוסף נוט</button>
+          </div>
+        </div>
+        <!-- View notes -->
+        <div class="boss-card">
+          <h3>📋 נוטים</h3>
+          <div class="boss-form" style="margin-bottom:10px;">
+            <select id="boss-view-notes-user" onchange="loadNotes(this.value)"><option value="">בחר שוטר...</option></select>
+          </div>
+          <div class="notes-list" id="notes-list"><span style="font-size:0.78rem;color:var(--text3);">בחר שוטר לצפייה בנוטים</span></div>
+        </div>
+        <!-- Promote to admin -->
+        <div class="boss-card">
+          <h3>⭐ הפוך למנהל</h3>
+          <div class="boss-form">
+            <select id="boss-promote-user"><option value="">בחר משתמש...</option></select>
+            <button class="boss-submit" onclick="promoteToAdmin()">הפוך למנהל</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FTO Sidebar -->
+<div id="fto-sidebar">
+  <h4>🎓 קאדט השבוע</h4>
+  <div class="cadet-assigned" id="cadet-assigned">
+    <span class="no-cadet">לא שויך קאדט</span>
+  </div>
+</div>
+
+<script>//<![CDATA[
+
+// ── FIREBASE ──────────────────────────────────────────────────────────────────
+var firebaseConfig = {
+  apiKey: "AIzaSyAMOihHnXa-j9X8dVSqRoREUauVd6Hh8TA",
+  authDomain: "pr-rp-polic.firebaseapp.com",
+  projectId: "pr-rp-polic",
+  storageBucket: "pr-rp-polic.firebasestorage.app",
+  messagingSenderId: "364977141598",
+  appId: "1:364977141598:web:861a4ff22fe8e6b28681cf"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+var auth = null; // not used
+
+// ── PORTALS ────────────────────────────────────────────────────────────────────
+var BASE = 'https://harelmamaliak-dot.github.io/lspd-website/';
+var PORTALS = {
+  cadet: [
+    { id:'cadet-study', icon:'📖', name:'נהלים ובחינה', desc:'לימוד עצמי + בחינה אמריקאית', color:'#58a6ff', glow:'rgba(88,166,255,0.2)', file:'cadet_study.html' },
+    { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' }
+  ],
+  officer: [
+    { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' }
+  ],
+  fto: [
+    { id:'prrp-pd', icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
+    { id:'fto-exam', icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
+    { id:'fto-eval', icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' }
+  ],
+  command: [
+    { id:'prrp-pd', icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
+    { id:'fto-exam', icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
+    { id:'fto-eval', icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' },
+    { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' },
+    { id:'tracker', icon:'⏱️', name:'מחשבון מערכת שעות', desc:'lspd_tracker', color:'#38bdf8', glow:'rgba(56,189,248,0.2)', file:'lspd_tracker_v4_0.html' }
+  ],
+  high_command: [
+    { id:'prrp-pd', icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
+    { id:'fto-exam', icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
+    { id:'fto-eval', icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' },
+    { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' },
+    { id:'tracker', icon:'⏱️', name:'מחשבון מערכת שעות', desc:'lspd_tracker', color:'#38bdf8', glow:'rgba(56,189,248,0.2)', file:'lspd_tracker_v4_0.html' },
+    { id:'boss', icon:'🔧', name:'Boss Menu', desc:'ניהול המערכת', color:'#e2b96f', glow:'rgba(226,185,111,0.2)', file:null }
+  ]
+};
+
+var ROLE_LABELS = { cadet:'קאדט', officer:'שוטר', fto:'FTO', command:'פיקוד', high_command:'פיקוד גבוה' };
+var ADMIN_EMAIL = 'harelmamaliak@gmail.com';
+var currentUser = null;
+var currentUserData = null;
+
+// ── AUTH ────────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(function(t,i){ t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')); });
+  document.getElementById('login-form').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('register-form').style.display = tab==='register' ? 'block' : 'none';
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+function showAuthError(msg) {
+  var el = document.getElementById('auth-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function doLogin() {
+  var username = document.getElementById('l-username').value.trim();
+  var password = document.getElementById('l-password').value;
+  if (!username || !password) { showAuthError('נא למלא את כל השדות'); return; }
+  db.collection('users').where('username','==',username).get().then(function(snap) {
+    if (snap.empty) { showAuthError('שם משתמש לא קיים'); return; }
+    var doc = snap.docs[0];
+    var userData = doc.data();
+    if (userData.password !== password) { showAuthError('סיסמה שגויה'); return; }
+    // Save session
+    localStorage.setItem('lspd_uid', doc.id);
+    loadUserSession(doc.id);
+  }).catch(function(e) { showAuthError('שגיאה בכניסה: ' + e.message); });
+}
+
+function doRegister() {
+  var name = document.getElementById('r-name').value.trim();
+  var username = document.getElementById('r-username').value.trim();
+  var role = document.getElementById('r-role').value;
+  var password = document.getElementById('r-password').value;
+  if (!name||!username||!password) { showAuthError('נא למלא את כל השדות'); return; }
+  if (password.length < 4) { showAuthError('סיסמה חייבת להיות לפחות 4 תווים'); return; }
+  var needsApproval = (role==='command'||role==='high_command');
+  // Check username not taken
+  db.collection('users').where('username','==',username).get().then(function(snap) {
+    if (!snap.empty) { showAuthError('שם משתמש תפוס'); return; }
+    return db.collection('users').add({
+      name: name, username: username, password: password,
+      role: role, status: needsApproval ? 'pending' : 'active',
+      isAdmin: false, createdAt: new Date().toISOString()
+    }).then(function(ref) {
+      if (needsApproval) {
+        document.getElementById('pending-note').style.display = 'block';
+      } else {
+        localStorage.setItem('lspd_uid', ref.id);
+        loadUserSession(ref.id);
+      }
+    });
+  }).catch(function(e) { showAuthError('שגיאה בהרשמה: ' + e.message); });
+}
+
+function doLogout() {
+  localStorage.removeItem('lspd_uid');
+  currentUser = null; currentUserData = null;
+  showAuthScreen();
+}
+
+// ── AUTH STATE ─────────────────────────────────────────────────────────────────
+function loadUserSession(uid) {
+  db.collection('users').doc(uid).get().then(function(doc) {
+    if (!doc.exists) { localStorage.removeItem('lspd_uid'); showAuthScreen(); return; }
+    currentUser = {uid: uid};
+    currentUserData = doc.data();
+    currentUserData.uid = uid;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('header-username').textContent = currentUserData.name;
+    var roleLabel = ROLE_LABELS[currentUserData.role] || currentUserData.role;
+    var roleBadge = document.getElementById('header-role-badge');
+    roleBadge.textContent = roleLabel;
+    roleBadge.className = 'header-role role-' + currentUserData.role;
+    if (currentUserData.status === 'pending') {
+      showScreen('pending-screen');
+    } else {
+      showRoleScreen();
+      if (currentUserData.role === 'fto') loadFtoSidebar();
+    }
+  }).catch(function() { showAuthScreen(); });
+}
+
+function showAuthScreen() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// Check existing session on load
+document.addEventListener('DOMContentLoaded', function() {
+  var uid = localStorage.getItem('lspd_uid');
+  if (uid) {
+    loadUserSession(uid);
+  }
+});
+
+// ── SCREENS ────────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  ['pending-screen','role-screen','portal-screen','boss-screen'].forEach(function(s){
+    var el = document.getElementById(s);
+    el.style.display = 'none';
+    el.style.flexDirection = '';
+  });
+  var target = document.getElementById(id);
+  target.style.display = 'flex';
+  if (id !== 'portal-screen') target.style.flexDirection = 'column';
+}
+
+function showRoleScreen() {
+  showScreen('role-screen');
+  buildPortalCards();
+}
+
+function buildPortalCards() {
+  if (!currentUserData) return;
+  var role = currentUserData.role;
+  var portals = (PORTALS[role] || []).filter(function(p) {
+    if (p.id === 'boss' && role !== 'high_command') return false;
+    return true;
+  });
+  var grid = document.getElementById('portal-cards');
+  grid.innerHTML = portals.map(function(p) {
+    return '<div class="portal-card" style="--card-color:'+p.color+';--card-glow:'+p.glow+';" onclick="openPortal(this)" data-id="'+p.id+'" data-name="'+p.name+'" data-file="'+(p.file||'')+'">'+
+      '<span class="ci">'+p.icon+'</span>'+
+      '<div class="cn" style="color:'+p.color+'">'+p.name+'</div>'+
+      '<div class="cd">'+p.desc+'</div>'+
+      '</div>';
+  }).join('');
+  attachCardEffects();
+}
+
+function openPortal(el) {
+  var id = el.getAttribute('data-id');
+  var name = el.getAttribute('data-name');
+  var file = el.getAttribute('data-file');
+  playClick();
+  if (id === 'boss') {
+    if (currentUserData && currentUserData.role === 'high_command') {
+      openBossMenu();
+    } else {
+      alert('אין לך הרשאה לכניסה לBoss Menu');
+    }
+    return;
+  }
+  if (id === 'cadet-study') {
+    showCadetStudy();
+    return;
+  }
+  showScreen('portal-screen');
+  document.getElementById('portal-name').textContent = name;
+  document.getElementById('portal-iframe').src = BASE + file;
+}
+
+function showCadetStudy() {
+  // Hide all screens
+  ['pending-screen','role-screen','portal-screen','boss-screen'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) { el.style.display = 'none'; el.style.flexDirection = ''; }
+  });
+  var s = document.getElementById('cadet-study-screen');
+  s.style.display = 'flex';
+  s.style.flexDirection = 'column';
+  // Add back button
+  var bar = s.querySelector('.top-bar');
+  if (bar && !bar.querySelector('.back-to-portal')) {
+    var btn = document.createElement('button');
+    btn.className = 'portal-back back-to-portal';
+    btn.textContent = '← חזור';
+    btn.style.cssText = 'margin-right:8px;';
+    btn.onclick = function() { s.style.display = 'none'; showRoleScreen(); };
+    bar.insertBefore(btn, bar.firstChild);
+  }
+}
+
+function closePortal() { showRoleScreen(); document.getElementById('portal-iframe').src = ''; }
+
+// ── FTO SIDEBAR ────────────────────────────────────────────────────────────────
+function loadFtoSidebar() {
+  if (!currentUser) return;
+  db.collection('fto_assignments').doc(currentUser.uid).onSnapshot(function(doc) {
+    var sidebar = document.getElementById('fto-sidebar');
+    var assigned = document.getElementById('cadet-assigned');
+    sidebar.style.display = 'block';
+    if (doc.exists && doc.data().cadetName) {
+      var d = doc.data();
+      assigned.innerHTML = '<span class="cadet-name">'+d.cadetName+'</span><span class="cadet-tag">תג: '+d.cadetTag+'</span>';
+    } else {
+      assigned.innerHTML = '<span class="no-cadet">לא שויך קאדט</span>';
+    }
+  });
+}
+
+// ── BOSS MENU ──────────────────────────────────────────────────────────────────
+function openBossMenu() {
+  showScreen('boss-screen');
+  loadPendingUsers();
+  loadAllUsers();
+}
+
+function loadPendingUsers() {
+  db.collection('users').where('status','==','pending').onSnapshot(function(snap) {
+    var el = document.getElementById('boss-pending-list');
+    if (snap.empty) { el.innerHTML = '<span style="font-size:0.78rem;color:var(--text3);">אין בקשות ממתינות</span>'; return; }
+    window._pendingIds = {};
+    el.innerHTML = snap.docs.map(function(doc, i) {
+      var d = doc.data();
+      window._pendingIds['p'+i] = doc.id;
+      return '<div class="user-row"><div class="user-info"><div class="u-name">'+d.name+'</div><div class="u-role">'+ROLE_LABELS[d.role]+'</div></div>'+
+        '<div class="user-actions">'+
+        '<button class="ua-btn success" onclick="approveUser(window._pendingIds.p'+i+')">אשר</button>'+
+        '<button class="ua-btn danger" onclick="rejectUser(window._pendingIds.p'+i+')">דחה</button>'+
+        '</div></div>';
+    }).join('');
+  });
+}
+
+function loadAllUsers() {
+  db.collection('users').onSnapshot(function(snap) {
+    var el = document.getElementById('boss-users-list');
+    var ftoSelect = document.getElementById('boss-fto-select');
+    var noteSelect = document.getElementById('boss-note-user');
+    var viewSelect = document.getElementById('boss-view-notes-user');
+    var promoteSelect = document.getElementById('boss-promote-user');
+    var users = []; snap.forEach(function(doc){ users.push({id:doc.id,data:doc.data()}); });
+    window._userIds = {};
+    el.innerHTML = users.map(function(u, i) {
+      var d = u.data;
+      window._userIds['u'+i] = u.id;
+      var statusTxt = d.status==='pending' ? '⏳ ממתין' : '✅ פעיל';
+      var adminTxt = d.isAdmin ? ' • 👑 מנהל' : '';
+      return '<div class="user-row"><div class="user-info"><div class="u-name">'+d.name+'</div><div class="u-role">'+(ROLE_LABELS[d.role]||d.role)+' - '+statusTxt+adminTxt+'</div></div>'+
+        '<div class="user-actions">'+
+        '<button class="ua-btn danger" data-i="'+i+'" onclick="deleteUser(window._userIds[this.dataset.i])">X</button>'+
+        '</div></div>';
+    }).join('');
+    // Update selects
+    var ftoUsers = users.filter(function(u){ return u.data.role==='fto' && u.data.status==='active'; });
+    ftoSelect.innerHTML = '<option value="">בחר FTO...</option>' + ftoUsers.map(function(u){ return '<option value="'+u.id+'">'+u.data.name+'</option>'; }).join('');
+    var allActive = users.filter(function(u){ return u.data.status==='active'; });
+    var opts = allActive.map(function(u){ return '<option value="'+u.id+'">'+u.data.name+'</option>'; }).join('');
+    noteSelect.innerHTML = '<option value="">בחר שוטר...</option>' + opts;
+    viewSelect.innerHTML = '<option value="">בחר שוטר...</option>' + opts;
+    promoteSelect.innerHTML = '<option value="">בחר משתמש...</option>' + opts;
+  });
+}
+
+function approveUser(uid) { db.collection('users').doc(uid).update({status:'active'}); }
+function rejectUser(uid) { if(confirm('למחוק את המשתמש?')) db.collection('users').doc(uid).delete(); }
+function deleteUser(uid) { if(confirm('למחוק?')) db.collection('users').doc(uid).delete(); }
+function promoteToAdmin() {
+  var uid = document.getElementById('boss-promote-user').value;
+  if (!uid) { alert('בחר משתמש'); return; }
+  db.collection('users').doc(uid).update({isAdmin:true, role:'command'}).then(function(){ alert('המשתמש הפך למנהל!'); });
+}
+
+function assignCadet() {
+  var ftoUid = document.getElementById('boss-fto-select').value;
+  var name = document.getElementById('boss-cadet-name').value.trim();
+  var tag = document.getElementById('boss-cadet-tag').value.trim();
+  if (!ftoUid||!name||!tag) { alert('מלא את כל השדות'); return; }
+  db.collection('fto_assignments').doc(ftoUid).set({cadetName:name,cadetTag:tag,assignedAt:new Date().toISOString()})
+    .then(function(){ document.getElementById('boss-cadet-name').value=''; document.getElementById('boss-cadet-tag').value=''; alert('קאדט שויך בהצלחה!'); });
+}
+
+function addNote() {
+  var uid = document.getElementById('boss-note-user').value;
+  var text = document.getElementById('boss-note-text').value.trim();
+  if (!uid||!text) { alert('מלא את כל השדות'); return; }
+  db.collection('notes').add({
+    userId: uid, text: text,
+    author: currentUserData ? currentUserData.name : 'מנהל',
+    createdAt: new Date().toISOString()
+  }).then(function(){ document.getElementById('boss-note-text').value=''; alert('נוט נוסף!'); });
+}
+
+function loadNotes(uid) {
+  if (!uid) return;
+  db.collection('notes').where('userId','==',uid).orderBy('createdAt','desc').get().then(function(snap) {
+    var el = document.getElementById('notes-list');
+    if (snap.empty) { el.innerHTML = '<span style="font-size:0.78rem;color:var(--text3);">אין נוטים</span>'; return; }
+    el.innerHTML = snap.docs.map(function(doc) {
+      var d = doc.data();
+      return '<div class="note-item"><div class="note-author">'+d.author+' • '+d.createdAt.substring(0,10)+'</div><div class="note-text">'+d.text+'</div></div>';
+    }).join('');
+  });
+}
+
+// ── UTILS ──────────────────────────────────────────────────────────────────────
+function attachCardEffects() {
+  document.querySelectorAll('.portal-card').forEach(function(card) {
+    card.onmouseenter = function() { var i=card.querySelector('.ci'); if(i) i.style.transform='scale(1.1)'; };
+    card.onmouseleave = function() { var i=card.querySelector('.ci'); if(i) i.style.transform=''; };
+    card.onmousedown = playClick;
+  });
+}
+
+function playClick() {
+  try {
+    var ctx=new(window.AudioContext||window.webkitAudioContext)(),t=ctx.currentTime;
+    var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*.008),ctx.sampleRate);
+    var d=b.getChannelData(0);
+    for(var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*.001));
+    var s=ctx.createBufferSource(); s.buffer=b;
+    var g=ctx.createGain(); g.gain.setValueAtTime(.35,t); g.gain.exponentialRampToValueAtTime(.001,t+.008);
+    s.connect(g); g.connect(ctx.destination); s.start(t);
+  } catch(e) {}
+}
+
+// Mouse glow
+(function() {
+  var c=document.getElementById('glow-canvas');
+  if(!c) return;
+  var x=c.getContext('2d'),mx=-500,my=-500;
+  function r(){ c.width=innerWidth; c.height=innerHeight; }
+  r(); addEventListener('resize',r);
+  addEventListener('mousemove',function(e){ mx=e.clientX; my=e.clientY; });
+  (function draw(){
+    x.clearRect(0,0,c.width,c.height);
+    var g=x.createRadialGradient(mx,my,0,mx,my,150);
+    g.addColorStop(0,'rgba(79,142,247,0.06)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=g; x.fillRect(0,0,c.width,c.height);
+    requestAnimationFrame(draw);
+  })();
+})();
+
+//]]></script>
+
+  <!-- CADET STUDY SCREEN -->
+  <div id="cadet-study-screen" style="display:none;flex-direction:column;flex:1;overflow-y:auto;">
+
+
+<div class="top-bar">
+  <h1>🎓 קאדט — חומר לימוד</h1>
+  <div class="tab-btns">
+    <button class="tab-btn active" onclick="showTab('study')">📖 נהלים</button>
+    <button class="tab-btn" onclick="showTab('quiz')">✏️ בחינה עצמית</button>
+  </div>
+</div>
+
+<!-- STUDY TAB -->
+<div id="study-tab">
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל עלייה למשמרת <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ol>
+        <li>לכתוב <span class="tag">10-8</span> ב-pchat</li>
+        <li>לעלות לקשר 1</li>
+        <li>לוודא שהפק"ל המלא נמצא עליך ולהשלים במידת הצורך</li>
+        <li>להדליק מצלמת גוף (bodycam)</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל ירידה ממשמרת <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <p><strong>יוצאים מהשרת:</strong> לכתוב <span class="tag">10-7</span> ב-pchat ולצאת.</p>
+      <p style="margin-top:10px;"><strong>נשארים בשרת:</strong></p>
+      <ol>
+        <li>לבקש אישור ממפקד — אין לרדת ממשמרת ללא אישור!</li>
+        <li>להוריד מדים ולעבור ללבוש אזרחי מלא</li>
+        <li>להוריד כל ציוד משטרתי ולשים בלוקר האישי</li>
+        <li>לעדכן תג: <span class="tag">XXX-10-7</span> (לדוגמה: 203-10-7)</li>
+      </ol>
+      <div class="warn">⚠️ חל איסור להסתובב עם ניידת משטרתית לא במשמרת!</div>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל 10-6 (הפסקה) <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ol>
+        <li>לשים אדום בפאנל (לא פנוי לאירועים)</li>
+        <li>לכתוב <span class="tag">10-6</span> ב-pchat</li>
+        <li>לכתוב <span class="tag">10-6/</span> — ישנה תג אוטומטית ויעביר לקשר הפסקה</li>
+        <li>ללכת ל-break room בתחנה</li>
+      </ol>
+      <div class="warn">⚠️ עד 15 דקות, מקסימום 3 הפסקות ביום. בחזרה — לשנות תג, לשים ירוק בפאנל, לחזור לקשר 1!</div>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל חדר תדריכים <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ol>
+        <li>לעלות לקשר 1 אם לא עליו</li>
+        <li>לוודא שכל הפק"ל נמצא, במידה ויש חוסר לרוץ להשלים</li>
+        <li>להוריד ווסט, כובע ומשקפי שמש לפני הכניסה</li>
+        <li>להגיע לחדר תדריכים ולהתיישב בסדר עם היחידה/המחוז</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל עצירה שגרתית <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ol>
+        <li>להדליק אורות + סירנה ולצעוק לנהג לעצור עם שני גלגלים ימניים על המדרכה. לוודא שהאזור בטוח לעצירה</li>
+        <li>לעצור מאחורי הרכב בזווית של 45 מעלות כלפי הכביש</li>
+        <li>להורות לנהג לדומם מנוע ולשים מפתחות על גג הרכב (או רצפה אם אופנוע)</li>
+        <li>רק אחרי שהמפתחות הונחו — השוטר שלצד הנהג יוצא וניגש לחלון. הנהג נשאר בניידת!</li>
+        <li>להציג עצמו מילולית + להציג תג פיזית</li>
+        <li>לבקש הזדהות ורשיונות, לוודא שאין צו מעצר ושהרכב לא גנוב</li>
+        <li>להציג לנהג את סיבת העצירה</li>
+        <li>ליקוי/עבירת תנועה — לתת דוח/אזהרה לפי שיקול דעת. חובה לתעד ב-MDT + הערה בפרופיל</li>
+        <li>עם סיום — להורות לנהג שהוא משוחרר ורשאי לנסוע, ואז להיכנס לניידת</li>
+      </ol>
+      <div class="warn">⚠️ יש להקפיד על שיח מכבד והולם לאורך כל העצירה!</div>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל עצירת תנועה בסיכון — קוד 5 <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <p>מבוצע כאשר יש <strong>צו מעצר פעיל</strong> על חשוד מסוכן ו/או חמוש.</p>
+      <ol style="margin-top:10px;">
+        <li>לדווח בקשר ולבקש תגבורת — מינימום 3 ניידות, 6 שוטרים</li>
+        <li>לשמור מרחק ביטחון של 10 מטרים לפחות מאחורי הרכב</li>
+        <li>כל השוטרים יוצאים עם נשק שלוף, עומדים מאחורי דלת פתוחה</li>
+        <li>מנהל העצירה יצעק: "צא מהרכב לאט ובידיים מורמות! תסתובב עם הגב אלי! תתקדם אחורה לאט עם ידיים למעלה!"</li>
+        <li>כשהחשוד במרחק 2-3 מטרים — שוטר ניגש לאזיקה</li>
+        <li>לאחר אזיקה — נמשיך לפי נוהל מעצר + חיפוש ברכב + עיקולו</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל פתיחת מרדף (10-80) <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <p>מי שליד הנהג עולה לקשר ומדווח:</p>
+      <p style="margin:10px 0; padding:10px; background:#1c2128; border-radius:6px; font-size:0.82rem;">
+        "כאן [תג] + [כמות שוטרים] פתחנו ב-10-80 לאחר רכב שביצע [סיבה], צריכים/לא צריכים 10-78 ל[מיקום], לעלות קשר [X]"
+      </p>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל מרדף רגלי (10-70) <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ol>
+        <li>השוטר שלצד הנהג פורק ורץ אחר החשוד</li>
+        <li>הנהג עוקב עם הניידת לאט ומדווח בקשר על פתיחת המרדף</li>
+      </ol>
+      <p style="margin-top:10px;"><strong>כללים:</strong></p>
+      <ul>
+        <li>טאקל: מותר אחרי דקה, דקה בין כל טאקל</li>
+        <li>טייזר: מותר אחרי 2 דקות, 2 דקות בין כל שימוש</li>
+        <li>חשוד שולף נשק חם: הזהרה מילולית ← 3 יריות אזהרה לאוויר ← פלג גוף תחתון אם לא מוריד</li>
+        <li>חשוד מכוון עליך: ירי מיידי למרכז מסה</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל מעצר חשוד <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ol>
+        <li>ישר אחרי אזיקה — להקריא זכויות מירנדה:<br>
+          <em style="color:#8b949e;">"יש לך את הזכות לשמור על השתיקה... לשכור עורך דין... לקבל אוכל, מים, טיפול רפואי ושיחת טלפון בת 60 שניות."</em></li>
+        <li>לשאול האם הזכויות מובנות — אם לא, לחזור פעם שנייה</li>
+        <li>בתחנה: חיפוש + לקחת דברים לא חוקיים + קשר + טלפון</li>
+        <li>לוודא ב-MDT תמונה עדכנית + טביעת אצבע, אם חסר — לעדכן</li>
+        <li>להכניס לתא מעצר ולהוריד אזיקה</li>
+        <li>למלא Incident ב-MDT בצורה מלאה</li>
+        <li>לשים חפצים מוחרמים ב-Evidence + לצרף תמונה ב-Incident</li>
+        <li>לתת דוח ולשלוח לכלא למספר החודשים ב-Incident</li>
+      </ol>
+      <div class="warn">⚠️ לא הוקראו זכויות ישר אחרי אזיקה ללא סיבה — הפחתת 30% מהעונש! לפני פתיחת האינסידנט — הפחתת 70%!</div>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל פיטים <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ul>
+        <li>פיט מותר אחרי ~4 דקות מתחילת מרדף</li>
+        <li>כל דקה מהפיט הראשון ניתן פיט נוסף</li>
+        <li>תמיד נדרש אישור מנהל המרדף!</li>
+        <li>פיט עד 135 קמ"ש בדופן האחורי בלבד</li>
+        <li>ספייקים — גם אחרי ~4 דקות, השוטר חייב להישאר עד הסרתם</li>
+      </ul>
+      <div class="warn">⚠️ שוטר שייתן פיט מעל 135 יענש על עבירה על נוהל משטרתי!</div>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל פתיחה בירי <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <p><strong>3 תנאים חייבים להתקיים יחד:</strong></p>
+      <ul style="margin:10px 0;">
+        <li><strong>אמצעי</strong> — החשוד מחזיק נשק חם/קר</li>
+        <li><strong>כוונה</strong> — יש לו כוונה מיידית לפגוע</li>
+        <li><strong>יכולת</strong> — יש לו יכולת פיזית לממש</li>
+      </ul>
+      <p><strong>5 סיטואציות מאושרות:</strong></p>
+      <ol style="margin-top:8px;">
+        <li>החשוד מכוון/יורה עליך</li>
+        <li>מרדף רגלי עם נשק שלוף: הזהרה ← 3 אזהרות לאוויר ← פלג גוף תחתון</li>
+        <li>חשוד קפץ למים בכוונה ללא סירה — מותר. עם סירה — רק אחרי 15 דקות מרדף ימי</li>
+        <li>רכב נותן פיטים מכוון פעמיים — באישור מנהל המרדף</li>
+        <li>עצירה שגרתית ובורח ללא ניידת/אופנוע/מסוק — ירי לגלגלים בלבד</li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+
+<!-- QUIZ TAB -->
+<div id="quiz-tab">
+  <div class="quiz-start" id="quiz-start">
+    <h2>✏️ בחינה עצמית</h2>
+    <p>15 שאלות אמריקאיות על הנהלים.<br>בדוק את עצמך לפני הבחינה האמיתית!</p>
+    <button class="btn-start" onclick="startQuiz()">התחל בחינה</button>
+  </div>
+
+  <div class="quiz-card" id="quiz-card">
+    <div class="quiz-progress">
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+      <span class="q-num" id="q-num">1 / 15</span>
+    </div>
+    <div class="question" id="q-text"></div>
+    <div class="options" id="q-options"></div>
+    <div class="explain" id="q-explain"></div>
+    <button class="btn-next" id="btn-next" onclick="nextQuestion()">הבא ←</button>
+  </div>
+
+  <div class="quiz-result" id="quiz-result">
+    <div class="result-score" id="result-score"></div>
+    <div class="result-msg" id="result-msg"></div>
+    <button class="btn-retry" onclick="startQuiz()">נסה שוב</button>
+  </div>
+</div>
+
+<script>
+function toggle(header) {
+  var body = header.nextElementSibling;
+  var arrow = header.querySelector('.arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function showTab(tab) {
+  document.getElementById('study-tab').style.display = tab === 'study' ? 'block' : 'none';
+  document.getElementById('quiz-tab').style.display = tab === 'quiz' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach(function(b, i) {
+    b.classList.toggle('active', (i === 0 && tab === 'study') || (i === 1 && tab === 'quiz'));
+  });
+}
+
+var QUESTIONS = [
+  { q: 'מה הפעולה הראשונה בנוהל עלייה למשמרת?', opts: ['לעלות לקשר 1', 'לכתוב 10-8 ב-pchat', 'להדליק bodycam', 'לוודא פק"ל'], ans: 1, exp: 'הפעולה הראשונה היא לכתוב 10-8 ב-pchat, ואז לעלות לקשר 1.' },
+  { q: 'כמה הפסקות מותרות ביום?', opts: ['1', '2', '3', '4'], ans: 2, exp: 'ניתן לצאת ל-3 הפסקות ביום מקסימום, כל הפסקה עד 15 דקות.' },
+  { q: 'מה זמן ההפסקה המותר?', opts: ['10 דקות', '15 דקות', '20 דקות', '30 דקות'], ans: 1, exp: 'זמן ההפסקה המותר הוא עד 15 דקות.' },
+  { q: 'בנוהל עצירה שגרתית, מתי יוצאים מהניידת?', opts: ['מיד עם עצירה', 'אחרי שהנהג שם מפתחות על הרכב', 'אחרי שהנהג יוצא', 'כל עת'], ans: 1, exp: 'רק לאחר שהנהג שם מפתחות על גג הרכב, השוטר שלצד הנהג יוצא מהניידת.' },
+  { q: 'בזווית כמה מעלות יש לעצור מאחורי הרכב בעצירה שגרתית?', opts: ['30 מעלות', '45 מעלות', '60 מעלות', '90 מעלות'], ans: 1, exp: 'יש לעצור מאחורי הרכב בזווית של 45 מעלות כלפי הכביש.' },
+  { q: 'כמה ניידות נדרשות לקוד 5 (עצירה בסיכון)?', opts: ['2 ניידות, 4 שוטרים', '3 ניידות, 6 שוטרים', '2 ניידות, 6 שוטרים', '4 ניידות, 8 שוטרים'], ans: 1, exp: 'מינימום 3 ניידות ו-6 שוטרים לביצוע קוד 5.' },
+  { q: 'כמה דקות יש להמתין לפני מתן טאקל במרדף רגלי?', opts: ['30 שניות', '1 דקה', '2 דקות', '3 דקות'], ans: 1, exp: 'ניתן לתת טאקל לאחר דקה מתחילת המרדף, דקה בין כל טאקל.' },
+  { q: 'כמה דקות יש להמתין לפני מתן טייזר במרדף רגלי?', opts: ['1 דקה', '2 דקות', '3 דקות', '5 דקות'], ans: 1, exp: 'ניתן לתת טייזר 2 דקות מתחילת המרדף, 2 דקות בין כל שימוש.' },
+  { q: 'מה קורה אם לא הוקראו זכויות ישר אחרי אזיקה ללא סיבה?', opts: ['אין עונש', 'הפחתת 10% מהעונש', 'הפחתת 30% מהעונש', 'ביטול המעצר'], ans: 2, exp: 'אם לא הוקראו זכויות ישר אחרי אזיקה ללא סיבה מוצדקת — הפחתת 30% מהעונש.' },
+  { q: 'מה אחוז ההפחתה מהעונש אם לא הוקראו זכויות לפני פתיחת Incident?', opts: ['10%', '30%', '50%', '70%'], ans: 3, exp: 'אם לא הוקראו זכויות לפני פתיחת האינסידנט — הפחתת 70% מהעונש.' },
+  { q: 'מה המהירות המקסימלית למתן פיט?', opts: ['100 קמ"ש', '120 קמ"ש', '135 קמ"ש', '150 קמ"ש'], ans: 2, exp: 'פיט ניתן עד 135 קמ"ש בדופן האחורי של הרכב בלבד.' },
+  { q: 'כמה אחרי כמה דקות ממרדף ניתן לתת פיט?', opts: ['2 דקות', '3 דקות', '4 דקות', '5 דקות'], ans: 2, exp: 'ניתן לתת פיט לאחר כ-4 דקות מתחילת מרדף.' },
+  { q: 'כמה יריות אזהרה לאוויר יש לירות לפני ירי לפלג גוף תחתון?', opts: ['1', '2', '3', '4'], ans: 2, exp: 'יש להזהיר מילולית, ואז לירות 3 יריות אזהרה לאוויר לפני ירי לפלג גוף תחתון.' },
+  { q: 'מה 3 התנאים לפתיחה בירי?', opts: ['נשק + מרדף + כוונה', 'אמצעי + כוונה + יכולת', 'איום + נשק + אישור', 'כוונה + יכולת + פקודה'], ans: 1, exp: 'שלושת התנאים הם: אמצעי (החשוד מחזיק נשק), כוונה (כוונה מיידית לפגוע), יכולת (יכולת פיזית לממש).' },
+  { q: 'מה לובשים לפני כניסה לחדר תדריכים?', opts: ['מדים מלאים כולל ווסט', 'מדים ללא ווסט, כובע ומשקפיים', 'לבוש אזרחי', 'כל מה שרוצים'], ans: 1, exp: 'יש להוריד ווסט, כובע ומשקפי שמש לפני הכניסה לחדר תדריכים.' },
+];
+
+var current = 0, score = 0, answered = false;
+var shuffled = [];
+
+function startQuiz() {
+  current = 0; score = 0; answered = false;
+  shuffled = QUESTIONS.slice().sort(function() { return Math.random() - 0.5; }).slice(0, 15);
+  document.getElementById('quiz-start').style.display = 'none';
+  document.getElementById('quiz-result').style.display = 'none';
+  document.getElementById('quiz-card').style.display = 'block';
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  var q = shuffled[current];
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('q-num').textContent = (current + 1) + ' / ' + shuffled.length;
+  document.getElementById('prog-fill').style.width = ((current / shuffled.length) * 100) + '%';
+  document.getElementById('q-explain').style.display = 'none';
+  document.getElementById('btn-next').style.display = 'none';
+
+  var opts = document.getElementById('q-options');
+  opts.innerHTML = '';
+  var indices = q.opts.map(function(_, i) { return i; }).sort(function() { return Math.random() - 0.5; });
+  indices.forEach(function(i) {
+    var btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = q.opts[i];
+    btn.dataset.idx = i;
+    btn.onclick = function() { answer(this, q.ans); };
+    opts.appendChild(btn);
+  });
+}
+
+function answer(btn, correct) {
+  if (answered) return;
+  answered = true;
+  var chosen = parseInt(btn.dataset.idx);
+  document.querySelectorAll('.option').forEach(function(b) {
+    b.classList.add('disabled');
+    if (parseInt(b.dataset.idx) === correct) b.classList.add('correct');
+  });
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    score++;
+  } else {
+    btn.classList.add('wrong');
+  }
+  var expEl = document.getElementById('q-explain');
+  expEl.textContent = shuffled[current].exp;
+  expEl.style.display = 'block';
+  document.getElementById('btn-next').style.display = 'block';
+  document.getElementById('btn-next').textContent = current < shuffled.length - 1 ? 'הבא ←' : 'סיום ✓';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= shuffled.length) {
+    showResult();
+  } else {
+    showQuestion();
+  }
+}
+
+function showResult() {
+  document.getElementById('quiz-card').style.display = 'none';
+  var result = document.getElementById('quiz-result');
+  result.style.display = 'block';
+  var pct = Math.round((score / shuffled.length) * 100);
+  var scoreEl = document.getElementById('result-score');
+  scoreEl.textContent = score + '/' + shuffled.length;
+  scoreEl.style.color = pct >= 80 ? '#56d364' : pct >= 60 ? '#ffa500' : '#ff7b72';
+  var msgs = ['זקוק לעוד לימוד 📚', 'כמעט! תחזור על הנהלים 🔄', 'לא רע! עוד קצת ✊', 'כל הכבוד! 👏', 'מושלם! מוכן לבחינה 🏆'];
+  var msgIdx = pct < 40 ? 0 : pct < 60 ? 1 : pct < 75 ? 2 : pct < 90 ? 3 : 4;
+  document.getElementById('result-msg').textContent = msgs[msgIdx] + ' — ' + pct + '%';
+}
+</script>
+
+  </div>
+
+</body>
+</html>
