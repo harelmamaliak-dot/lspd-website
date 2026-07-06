@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Los Santos Police</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+:root {
+  --bg: #0d0d0f;
+  --surface: #16161a;
+  --surface2: #1e1e24;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0f0f2;
+  --text2: #a0a0b0;
+  --text3: #606070;
+  --accent: #4f8ef7;
+  --accent2: #3a7ae0;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --gold: #e2b96f;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+
+/* Auth screen */
+#auth-screen {
+  display: flex; align-items: center; justify-content: center;
+  height: 100vh; background: var(--bg);
+  background-image: radial-gradient(ellipse at 30% 20%, rgba(79,142,247,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(79,142,247,0.04) 0%, transparent 60%);
+}
+.auth-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 40px; width: 400px; max-width: 95vw;
+}
+.auth-logo { text-align: center; margin-bottom: 32px; }
+.auth-logo .shield { font-size: 2.5rem; margin-bottom: 8px; }
+.auth-logo h1 { font-family: 'Rajdhani', sans-serif; font-size: 1.6rem; font-weight: 700; letter-spacing: 3px; color: var(--text); }
+.auth-logo p { font-size: 0.75rem; color: var(--text3); letter-spacing: 2px; margin-top: 4px; }
+.auth-tabs { display: flex; background: var(--bg); border-radius: 8px; padding: 4px; margin-bottom: 28px; }
+.auth-tab { flex: 1; padding: 8px; text-align: center; font-size: 0.82rem; font-weight: 500; color: var(--text2); cursor: pointer !important; border-radius: 6px; transition: all 0.2s; }
+.auth-tab.active { background: var(--surface2); color: var(--text); }
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 0.75rem; font-weight: 500; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.5px; }
+.field input, .field select {
+  width: 100%; background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 10px 14px; color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 0.85rem; outline: none; transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.field select option { background: var(--surface2); }
+.btn-primary {
+  width: 100%; background: var(--accent); border: none; border-radius: 8px;
+  padding: 11px; color: #fff; font-family: 'Inter', sans-serif; font-weight: 600;
+  font-size: 0.88rem; cursor: pointer !important; transition: all 0.2s; margin-top: 8px;
+}
+.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+.auth-error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 7px; padding: 10px 14px; font-size: 0.78rem; color: var(--danger); margin-bottom: 14px; display: none; }
+.pending-note { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 7px; padding: 10px 14px; font-size: 0.78rem; color: var(--warning); margin-top: 12px; display: none; }
+
+/* Main app */
+#app { display: none; flex-direction: column; height: 100vh; }
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 56px; background: var(--surface);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.header-logo { font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: 3px; color: var(--text); }
+.header-logo span { color: var(--accent); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-user { font-size: 0.78rem; color: var(--text2); }
+.header-role { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.role-cadet { background: rgba(56,189,248,0.15); color: #38bdf8; }
+.role-officer { background: rgba(165,148,249,0.15); color: #a594f9; }
+.role-fto { background: rgba(165,148,249,0.15); color: #a594f9; }
+.role-command { background: rgba(251,191,36,0.15); color: var(--warning); }
+.role-high_command { background: rgba(248,113,113,0.15); color: var(--danger); }
+.btn-logout { background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 4px 12px; color: var(--text2); font-size: 0.75rem; cursor: pointer !important; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+/* Content */
+#content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+/* Pending screen */
+#pending-screen {
+  display: none; align-items: center; justify-content: center;
+  flex: 1; flex-direction: column; gap: 16px;
+}
+.pending-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; padding: 40px; text-align: center; max-width: 440px; }
+.pending-card .p-icon { font-size: 3rem; margin-bottom: 16px; }
+.pending-card h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; color: var(--warning); margin-bottom: 10px; }
+.pending-card p { font-size: 0.83rem; color: var(--text2); line-height: 1.7; }
+
+/* Role screen */
+#role-screen {
+  display: none; align-items: center; justify-content: center;
+  flex: 1; flex-direction: column;
+  background-image: radial-gradient(ellipse at 50% 30%, rgba(79,142,247,0.05) 0%, transparent 60%);
+  position: relative; overflow: hidden;
+}
+#role-screen::before { content: '🛡️'; position: absolute; font-size: 400px; opacity: 0.02; top: 50%; left: 50%; transform: translate(-50%,-55%); pointer-events: none; }
+.role-title { text-align: center; margin-bottom: 32px; position: relative; z-index: 1; }
+.role-title p { font-size: 0.72rem; color: var(--text3); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+.role-title h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--text); }
+.role-divider { width: 48px; height: 1px; background: linear-gradient(90deg,transparent,var(--accent),transparent); margin: 12px auto 32px; }
+.cards-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; position: relative; z-index: 1; max-width: 900px; }
+.portal-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 28px 24px; width: 180px; text-align: center;
+  cursor: pointer !important; transition: all 0.2s ease; position: relative; overflow: hidden;
+}
+.portal-card::after { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; background: radial-gradient(ellipse at 50% 0%, var(--card-glow, rgba(79,142,247,0.15)), transparent 70%); }
+.portal-card:hover { transform: translateY(-3px); border-color: var(--card-color, var(--accent)); box-shadow: 0 0 20px var(--card-glow, rgba(79,142,247,0.2)); }
+.portal-card:hover::after { opacity: 1; }
+.portal-card .ci { font-size: 2.4rem; margin-bottom: 12px; display: block; transition: transform 0.2s; }
+.portal-card:hover .ci { transform: scale(1.1); }
+.portal-card .cn { font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: 1px; }
+.portal-card .cd { font-size: 0.68rem; color: var(--text3); margin-top: 5px; }
+
+/* FTO sidebar */
+#fto-sidebar {
+  display: none; position: fixed; bottom: 20px; left: 20px; z-index: 100;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 16px; min-width: 200px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+#fto-sidebar h4 { font-size: 0.7rem; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+.cadet-assigned { display: flex; flex-direction: column; gap: 2px; }
+.cadet-name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.cadet-tag { font-size: 0.72rem; color: var(--accent); }
+.no-cadet { font-size: 0.78rem; color: var(--text3); }
+
+/* Portal screen */
+#portal-screen { display: none; flex-direction: column; flex: 1; }
+.portal-topbar { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.portal-back { background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 5px 14px; color: var(--text2); font-size: 0.78rem; cursor: pointer !important; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.portal-back:hover { color: var(--text); border-color: var(--border2); }
+.portal-name { font-size: 0.82rem; color: var(--text3); }
+.portal-iframe { flex: 1; border: none; width: 100%; }
+
+/* Boss Menu */
+#boss-screen { display: none; flex-direction: column; flex: 1; overflow-y: auto; padding: 24px; }
+.boss-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.boss-header h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--text); letter-spacing: 1px; }
+.boss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.boss-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+.boss-card h3 { font-size: 0.72rem; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.user-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.user-row:last-child { border-bottom: none; }
+.user-info .u-name { font-size: 0.83rem; font-weight: 600; color: var(--text); }
+.user-info .u-role { font-size: 0.7rem; color: var(--text3); margin-top: 2px; }
+.user-actions { display: flex; gap: 6px; }
+.ua-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 3px 10px; font-size: 0.7rem; cursor: pointer !important; transition: all 0.15s; color: var(--text2); font-family: 'Inter', sans-serif; }
+.ua-btn:hover { border-color: var(--accent); color: var(--accent); }
+.ua-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+.ua-btn.success:hover { border-color: var(--success); color: var(--success); }
+.boss-form { display: flex; flex-direction: column; gap: 10px; }
+.boss-form input, .boss-form select, .boss-form textarea {
+  background: var(--bg); border: 1px solid var(--border2); border-radius: 7px;
+  padding: 8px 12px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.82rem; outline: none;
+}
+.boss-form textarea { resize: vertical; min-height: 60px; }
+.boss-form input:focus, .boss-form select:focus, .boss-form textarea:focus { border-color: var(--accent); }
+.boss-submit { background: var(--accent); border: none; border-radius: 7px; padding: 8px; color: #fff; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.8rem; cursor: pointer !important; transition: background 0.2s; }
+.boss-submit:hover { background: var(--accent2); }
+.notes-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
+.note-item { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; }
+.note-item .note-author { font-size: 0.68rem; color: var(--text3); margin-bottom: 4px; }
+.note-item .note-text { font-size: 0.8rem; color: var(--text2); }
+
+/* Mouse glow */
+#glow-canvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; }
+</style>
+</head>
+<body>
+<canvas id="glow-canvas"></canvas>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="shield">🛡️</div>
+      <h1>LOS SANTOS PD</h1>
+      <p>PATROL UNIT</p>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">התחברות</div>
+      <div class="auth-tab" onclick="switchTab('register')">הרשמה</div>
+    </div>
+    <div id="auth-error" class="auth-error"></div>
+
+    <!-- Login -->
+    <div id="login-form">
+      <div class="field"><label>שם משתמש</label><input type="text" id="l-username" placeholder="השם שלך" /></div>
+      <div class="field"><label>סיסמה</label><input type="password" id="l-password" placeholder="••••••••" /></div>
+      <button class="btn-primary" onclick="doLogin()">כניסה למערכת</button>
+    </div>
+
+    <!-- Register -->
+    <div id="register-form" style="display:none;">
+      <div class="field"><label>שם מלא</label><input type="text" id="r-name" placeholder="ג'ון דו" /></div>
+      <div class="field"><label>שם משתמש</label><input type="text" id="r-username" placeholder="בחר שם משתמש" /></div>
+      <div class="field"><label>דרגה</label>
+        <select id="r-role">
+          <option value="cadet">קאדט</option>
+          <option value="officer">שוטר</option>
+          <option value="fto">FTO</option>
+          <option value="command">פיקוד</option>
+          <option value="high_command">פיקוד גבוה</option>
+        </select>
+      </div>
+      <div class="field"><label>סיסמה</label><input type="password" id="r-password" placeholder="מינימום 6 תווים" /></div>
+      <button class="btn-primary" onclick="doRegister()">הרשמה</button>
+      <div id="pending-note" class="pending-note">⏳ דרגת פיקוד דורשת אישור מנהל. תוכל להיכנס לאחר האישור.</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-logo">LOS <span>SANTOS</span> PD</div>
+    <div class="header-right">
+      <span class="header-user" id="header-username"></span>
+      <span class="header-role" id="header-role-badge"></span>
+      <button class="btn-logout" onclick="doLogout()">יציאה</button>
+    </div>
+  </header>
+
+  <div id="content">
+    <!-- Pending -->
+    <div id="pending-screen">
+      <div class="pending-card">
+        <div class="p-icon">⏳</div>
+        <h2>ממתין לאישור</h2>
+        <p>בקשתך נשלחה למנהל המערכת.<br>תוכל להיכנס לאחר שהבקשה תאושר.<br><br>
+        <span style="color:var(--text3);font-size:0.75rem;">לפניות: פנה למפקד בדיסקורד</span></p>
+      </div>
+    </div>
+
+    <!-- Role/Category screen -->
+    <div id="role-screen">
+      <div class="role-title">
+        <p>ברוך הבא</p>
+        <h2>בחר קטגוריה</h2>
+      </div>
+      <div class="role-divider"></div>
+      <div class="cards-grid" id="portal-cards"></div>
+    </div>
+
+    <!-- Portal -->
+    <div id="portal-screen">
+      <div class="portal-topbar">
+        <button class="portal-back" onclick="closePortal()">← חזור</button>
+        <span class="portal-name" id="portal-name"></span>
+      </div>
+      <iframe class="portal-iframe" id="portal-iframe" src=""></iframe>
+    </div>
+
+    <!-- Boss Menu -->
+    <div id="boss-screen">
+      <div class="boss-header">
+        <h2>🔧 Boss Menu</h2>
+        <button class="portal-back" onclick="showRoleScreen()">← חזור</button>
+      </div>
+      <div class="boss-grid">
+        <!-- Pending approvals -->
+        <div class="boss-card">
+          <h3>⏳ ממתינים לאישור</h3>
+          <div id="boss-pending-list"><span style="font-size:0.78rem;color:var(--text3);">טוען...</span></div>
+        </div>
+        <!-- All users -->
+        <div class="boss-card">
+          <h3>👥 כל המשתמשים</h3>
+          <div id="boss-users-list"><span style="font-size:0.78rem;color:var(--text3);">טוען...</span></div>
+        </div>
+        <!-- Assign cadet to FTO -->
+        <div class="boss-card">
+          <h3>🎓 שיוך קאדט ל-FTO</h3>
+          <div class="boss-form">
+            <select id="boss-fto-select"><option value="">בחר FTO...</option></select>
+            <input type="text" id="boss-cadet-name" placeholder="שם הקאדט" />
+            <input type="text" id="boss-cadet-tag" placeholder="תג הקאדט" />
+            <button class="boss-submit" onclick="assignCadet()">שייך קאדט</button>
+          </div>
+        </div>
+        <!-- Notes -->
+        <div class="boss-card">
+          <h3>📝 הוסף נוט לשוטר</h3>
+          <div class="boss-form">
+            <select id="boss-note-user"><option value="">בחר שוטר...</option></select>
+            <textarea id="boss-note-text" placeholder="כתוב נוט..."></textarea>
+            <button class="boss-submit" onclick="addNote()">הוסף נוט</button>
+          </div>
+        </div>
+        <!-- View notes -->
+        <div class="boss-card">
+          <h3>📋 נוטים</h3>
+          <div class="boss-form" style="margin-bottom:10px;">
+            <select id="boss-view-notes-user" onchange="loadNotes(this.value)"><option value="">בחר שוטר...</option></select>
+          </div>
+          <div class="notes-list" id="notes-list"><span style="font-size:0.78rem;color:var(--text3);">בחר שוטר לצפייה בנוטים</span></div>
+        </div>
+        <!-- Promote to admin -->
+        <div class="boss-card">
+          <h3>⭐ הפוך למנהל</h3>
+          <div class="boss-form">
+            <select id="boss-promote-user"><option value="">בחר משתמש...</option></select>
+            <button class="boss-submit" onclick="promoteToAdmin()">הפוך למנהל</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FTO Sidebar -->
+<div id="fto-sidebar">
+  <h4>🎓 קאדט השבוע</h4>
+  <div class="cadet-assigned" id="cadet-assigned">
+    <span class="no-cadet">לא שויך קאדט</span>
+  </div>
+</div>
+
+<script>
+// ── FIREBASE ──────────────────────────────────────────────────────────────────
+var firebaseConfig = {
+  apiKey: "AIzaSyAMOihHnXa-j9X8dVSqRoREUauVd6Hh8TA",
+  authDomain: "pr-rp-polic.firebaseapp.com",
+  projectId: "pr-rp-polic",
+  storageBucket: "pr-rp-polic.firebasestorage.app",
+  messagingSenderId: "364977141598",
+  appId: "1:364977141598:web:861a4ff22fe8e6b28681cf"
+};
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var db = firebase.firestore();
+
+// ── PORTALS ────────────────────────────────────────────────────────────────────
+var BASE = 'https://harelmamaliak-dot.github.io/lspd-website/';
+var PORTALS = {
+  cadet: [
+    { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' }
+  ],
+  officer: [
+    { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' }
+  ],
+  fto: [
+    { id:'prrp-pd', icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
+    { id:'fto-exam', icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
+    { id:'fto-eval', icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' }
+  ],
+  command: [
+    { id:'prrp-pd', icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
+    { id:'fto-exam', icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
+    { id:'fto-eval', icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' },
+    { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' },
+    { id:'tracker', icon:'⏱️', name:'מחשבון מערכת שעות', desc:'lspd_tracker', color:'#38bdf8', glow:'rgba(56,189,248,0.2)', file:'lspd_tracker_v4_0.html' },
+    { id:'boss', icon:'🔧', name:'Boss Menu', desc:'ניהול המערכת', color:'#e2b96f', glow:'rgba(226,185,111,0.2)', file:null }
+  ],
+  high_command: [
+    { id:'prrp-pd', icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
+    { id:'fto-exam', icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
+    { id:'fto-eval', icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' },
+    { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' },
+    { id:'tracker', icon:'⏱️', name:'מחשבון מערכת שעות', desc:'lspd_tracker', color:'#38bdf8', glow:'rgba(56,189,248,0.2)', file:'lspd_tracker_v4_0.html' },
+    { id:'boss', icon:'🔧', name:'Boss Menu', desc:'ניהול המערכת', color:'#e2b96f', glow:'rgba(226,185,111,0.2)', file:null }
+  ]
+};
+
+var ROLE_LABELS = { cadet:'קאדט', officer:'שוטר', fto:'FTO', command:'פיקוד', high_command:'פיקוד גבוה' };
+var ADMIN_EMAIL = 'harelmamaliak@gmail.com';
+var currentUser = null;
+var currentUserData = null;
+
+// ── AUTH ────────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(function(t,i){ t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')); });
+  document.getElementById('login-form').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('register-form').style.display = tab==='register' ? 'block' : 'none';
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+function showAuthError(msg) {
+  var el = document.getElementById('auth-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function doLogin() {
+  var username = document.getElementById('l-username').value.trim();
+  var password = document.getElementById('l-password').value;
+  if (!username || !password) { showAuthError('נא למלא את כל השדות'); return; }
+  // Find user by username
+  db.collection('users').where('username','==',username).get().then(function(snap) {
+    if (snap.empty) { showAuthError('שם משתמש לא קיים'); return; }
+    var userData = snap.docs[0].data();
+    auth.signInWithEmailAndPassword(userData.email, password)
+      .catch(function(e) { showAuthError('סיסמה שגויה'); });
+  }).catch(function() { showAuthError('שגיאה בכניסה'); });
+}
+
+function doRegister() {
+  var name = document.getElementById('r-name').value.trim();
+  var username = document.getElementById('r-username').value.trim();
+  var role = document.getElementById('r-role').value;
+  var password = document.getElementById('r-password').value;
+  if (!name||!username||!password) { showAuthError('נא למלא את כל השדות'); return; }
+  if (password.length < 6) { showAuthError('סיסמה חייבת להיות לפחות 6 תווים'); return; }
+  var needsApproval = (role==='command'||role==='high_command');
+  // Use username+random as fake email for Firebase Auth
+  var fakeEmail = username.toLowerCase().replace(/[^a-z0-9]/g,'') + '_' + Date.now() + '@lspd.local';
+  auth.createUserWithEmailAndPassword(fakeEmail, password).then(function(cred) {
+    return db.collection('users').doc(cred.user.uid).set({
+      uid: cred.user.uid, name: name, username: username,
+      email: fakeEmail, role: role,
+      status: needsApproval ? 'pending' : 'active',
+      isAdmin: false, createdAt: new Date().toISOString()
+    });
+  }).then(function() {
+    if (needsApproval) {
+      document.getElementById('pending-note').style.display = 'block';
+      showAuthError('');
+    }
+  }).catch(function(e) {
+    showAuthError(e.code === 'auth/email-already-in-use' ? 'שם משתמש תפוס' : 'שגיאה בהרשמה: ' + e.message);
+  });
+}
+
+function doLogout() {
+  auth.signOut();
+}
+
+// ── AUTH STATE ─────────────────────────────────────────────────────────────────
+// Initialize admin user if needed
+var ADMIN_UID = 'B2M3CCM2uObzph1SvN4z0nRJx6r2';
+db.collection('users').doc(ADMIN_UID).get().then(function(doc) {
+  if (!doc.exists) {
+    db.collection('users').doc(ADMIN_UID).set({
+      uid: ADMIN_UID,
+      name: 'Admin',
+      username: 'admin',
+      email: 'admin@lspd.local',
+      role: 'high_command',
+      status: 'active',
+      isAdmin: true,
+      createdAt: new Date().toISOString()
+    });
+  }
+}).catch(function(){});
+
+auth.onAuthStateChanged(function(user) {
+  if (user) {
+    currentUser = user;
+    db.collection('users').doc(user.uid).get().then(function(doc) {
+      if (!doc.exists) { auth.signOut(); return; }
+      currentUserData = doc.data();
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      document.getElementById('header-username').textContent = currentUserData.name;
+      var roleLabel = ROLE_LABELS[currentUserData.role] || currentUserData.role;
+      var roleBadge = document.getElementById('header-role-badge');
+      roleBadge.textContent = roleLabel;
+      roleBadge.className = 'header-role role-' + currentUserData.role;
+      if (currentUserData.status === 'pending') {
+        showScreen('pending-screen');
+      } else {
+        showRoleScreen();
+        if (currentUserData.role === 'fto') loadFtoSidebar();
+      }
+    });
+  } else {
+    currentUser = null; currentUserData = null;
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+});
+
+// ── SCREENS ────────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  ['pending-screen','role-screen','portal-screen','boss-screen'].forEach(function(s){
+    var el = document.getElementById(s);
+    el.style.display = 'none';
+    el.style.flexDirection = '';
+  });
+  var target = document.getElementById(id);
+  target.style.display = 'flex';
+  if (id !== 'portal-screen') target.style.flexDirection = 'column';
+}
+
+function showRoleScreen() {
+  showScreen('role-screen');
+  buildPortalCards();
+}
+
+function buildPortalCards() {
+  if (!currentUserData) return;
+  var role = currentUserData.role;
+  var portals = PORTALS[role] || [];
+  var grid = document.getElementById('portal-cards');
+  grid.innerHTML = portals.map(function(p) {
+    var onclick = 'openPortal(&quot;'+p.id+'&quot;,&quot;'+p.name+'&quot;,&quot;'+p.file+'&quot;)';
+    return '<div class="portal-card" style="--card-color:'+p.color+';--card-glow:'+p.glow+';" onclick="'+onclick+'">'+
+      '<span class="ci">'+p.icon+'</span>'+
+      '<div class="cn" style="color:'+p.color+'">'+p.name+'</div>'+
+      '<div class="cd">'+p.desc+'</div>'+
+      '</div>';
+  }).join('');
+  attachCardEffects();
+}
+
+function openPortal(id, name, file) {
+  playClick();
+  if (id === 'boss') { openBossMenu(); return; }
+  showScreen('portal-screen');
+  document.getElementById('portal-name').textContent = name;
+  document.getElementById('portal-iframe').src = BASE + file;
+}
+
+function closePortal() { showRoleScreen(); document.getElementById('portal-iframe').src = ''; }
+
+// ── FTO SIDEBAR ────────────────────────────────────────────────────────────────
+function loadFtoSidebar() {
+  if (!currentUser) return;
+  db.collection('fto_assignments').doc(currentUser.uid).onSnapshot(function(doc) {
+    var sidebar = document.getElementById('fto-sidebar');
+    var assigned = document.getElementById('cadet-assigned');
+    sidebar.style.display = 'block';
+    if (doc.exists && doc.data().cadetName) {
+      var d = doc.data();
+      assigned.innerHTML = '<span class="cadet-name">'+d.cadetName+'</span><span class="cadet-tag">תג: '+d.cadetTag+'</span>';
+    } else {
+      assigned.innerHTML = '<span class="no-cadet">לא שויך קאדט</span>';
+    }
+  });
+}
+
+// ── BOSS MENU ──────────────────────────────────────────────────────────────────
+function openBossMenu() {
+  showScreen('boss-screen');
+  loadPendingUsers();
+  loadAllUsers();
+}
+
+function loadPendingUsers() {
+  db.collection('users').where('status','==','pending').onSnapshot(function(snap) {
+    var el = document.getElementById('boss-pending-list');
+    if (snap.empty) { el.innerHTML = '<span style="font-size:0.78rem;color:var(--text3);">אין בקשות ממתינות</span>'; return; }
+    el.innerHTML = snap.docs.map(function(doc) {
+      var d = doc.data();
+      return '<div class="user-row"><div class="user-info"><div class="u-name">'+d.name+'</div><div class="u-role">'+ROLE_LABELS[d.role]+'</div></div>'+
+        '<div class="user-actions">'+
+        '<button class="ua-btn success" onclick="approveUser(&quot;"+doc.id+"&quot;)">אשר</button>'+
+        '<button class="ua-btn danger" onclick="rejectUser(&quot;"+doc.id+"&quot;)">דחה</button>'+
+        '</div></div>';
+    }).join('');
+  });
+}
+
+function loadAllUsers() {
+  db.collection('users').onSnapshot(function(snap) {
+    var el = document.getElementById('boss-users-list');
+    var ftoSelect = document.getElementById('boss-fto-select');
+    var noteSelect = document.getElementById('boss-note-user');
+    var viewSelect = document.getElementById('boss-view-notes-user');
+    var promoteSelect = document.getElementById('boss-promote-user');
+    var users = []; snap.forEach(function(doc){ users.push({id:doc.id,data:doc.data()}); });
+    el.innerHTML = users.map(function(u) {
+      var d = u.data;
+      return '<div class="user-row"><div class="user-info"><div class="u-name">'+d.name+'</div><div class="u-role">'+(ROLE_LABELS[d.role]||d.role)+' • '+(d.status==='pending'?'⏳ ממתין':'✅ פעיל')+(d.isAdmin?' • 👑 מנהל':'')+'</div></div>'+
+        '<div class="user-actions">'+
+        '<button class="ua-btn danger" onclick="deleteUser(&quot;"+u.id+"&quot;)">🗑️</button>'+
+        '</div></div>';
+    }).join('');
+    // Update selects
+    var ftoUsers = users.filter(function(u){ return u.data.role==='fto' && u.data.status==='active'; });
+    ftoSelect.innerHTML = '<option value="">בחר FTO...</option>' + ftoUsers.map(function(u){ return '<option value="'+u.id+'">'+u.data.name+'</option>'; }).join('');
+    var allActive = users.filter(function(u){ return u.data.status==='active'; });
+    var opts = allActive.map(function(u){ return '<option value="'+u.id+'">'+u.data.name+'</option>'; }).join('');
+    noteSelect.innerHTML = '<option value="">בחר שוטר...</option>' + opts;
+    viewSelect.innerHTML = '<option value="">בחר שוטר...</option>' + opts;
+    promoteSelect.innerHTML = '<option value="">בחר משתמש...</option>' + opts;
+  });
+}
+
+function approveUser(uid) { db.collection('users').doc(uid).update({status:'active'}); }
+function rejectUser(uid) { if(confirm('למחוק את המשתמש?')) db.collection('users').doc(uid).delete(); }
+function deleteUser(uid) { if(confirm('למחוק?')) db.collection('users').doc(uid).delete(); }
+function promoteToAdmin() {
+  var uid = document.getElementById('boss-promote-user').value;
+  if (!uid) { alert('בחר משתמש'); return; }
+  db.collection('users').doc(uid).update({isAdmin:true, role:'command'}).then(function(){ alert('המשתמש הפך למנהל!'); });
+}
+
+function assignCadet() {
+  var ftoUid = document.getElementById('boss-fto-select').value;
+  var name = document.getElementById('boss-cadet-name').value.trim();
+  var tag = document.getElementById('boss-cadet-tag').value.trim();
+  if (!ftoUid||!name||!tag) { alert('מלא את כל השדות'); return; }
+  db.collection('fto_assignments').doc(ftoUid).set({cadetName:name,cadetTag:tag,assignedAt:new Date().toISOString()})
+    .then(function(){ document.getElementById('boss-cadet-name').value=''; document.getElementById('boss-cadet-tag').value=''; alert('קאדט שויך בהצלחה!'); });
+}
+
+function addNote() {
+  var uid = document.getElementById('boss-note-user').value;
+  var text = document.getElementById('boss-note-text').value.trim();
+  if (!uid||!text) { alert('מלא את כל השדות'); return; }
+  db.collection('notes').add({
+    userId: uid, text: text,
+    author: currentUserData ? currentUserData.name : 'מנהל',
+    createdAt: new Date().toISOString()
+  }).then(function(){ document.getElementById('boss-note-text').value=''; alert('נוט נוסף!'); });
+}
+
+function loadNotes(uid) {
+  if (!uid) return;
+  db.collection('notes').where('userId','==',uid).orderBy('createdAt','desc').get().then(function(snap) {
+    var el = document.getElementById('notes-list');
+    if (snap.empty) { el.innerHTML = '<span style="font-size:0.78rem;color:var(--text3);">אין נוטים</span>'; return; }
+    el.innerHTML = snap.docs.map(function(doc) {
+      var d = doc.data();
+      return '<div class="note-item"><div class="note-author">'+d.author+' • '+d.createdAt.substring(0,10)+'</div><div class="note-text">'+d.text+'</div></div>';
+    }).join('');
+  });
+}
+
+// ── UTILS ──────────────────────────────────────────────────────────────────────
+function attachCardEffects() {
+  document.querySelectorAll('.portal-card').forEach(function(card) {
+    card.onmouseenter = function() { var i=card.querySelector('.ci'); if(i) i.style.transform='scale(1.1)'; };
+    card.onmouseleave = function() { var i=card.querySelector('.ci'); if(i) i.style.transform=''; };
+    card.onmousedown = playClick;
+  });
+}
+
+function playClick() {
+  try {
+    var ctx=new(window.AudioContext||window.webkitAudioContext)(),t=ctx.currentTime;
+    var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*.008),ctx.sampleRate);
+    var d=b.getChannelData(0);
+    for(var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*.001));
+    var s=ctx.createBufferSource(); s.buffer=b;
+    var g=ctx.createGain(); g.gain.setValueAtTime(.35,t); g.gain.exponentialRampToValueAtTime(.001,t+.008);
+    s.connect(g); g.connect(ctx.destination); s.start(t);
+  } catch(e) {}
+}
+
+// Mouse glow
+(function() {
+  var c=document.getElementById('glow-canvas');
+  if(!c) return;
+  var x=c.getContext('2d'),mx=-500,my=-500;
+  function r(){ c.width=innerWidth; c.height=innerHeight; }
+  r(); addEventListener('resize',r);
+  addEventListener('mousemove',function(e){ mx=e.clientX; my=e.clientY; });
+  (function draw(){
+    x.clearRect(0,0,c.width,c.height);
+    var g=x.createRadialGradient(mx,my,0,mx,my,150);
+    g.addColorStop(0,'rgba(79,142,247,0.06)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=g; x.fillRect(0,0,c.width,c.height);
+    requestAnimationFrame(draw);
+  })();
+})();
+</script>
+</body>
+</html>
