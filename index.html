@@ -4,1054 +4,331 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Los Santos Police</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHBhdGggZD0iTTE2IDIgTDI4IDcgTDI4IDE4IFEyOCAyNiAxNiAzMCBRNCAyNiA0IDE4IEw0IDcgWiIgZmlsbD0iIzFhM2E2YiIgc3Ryb2tlPSIjYTU5NGY5IiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2E1OTRmOSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXdlaWdodD0iYm9sZCI+4piFPC90ZXh0Pgo8L3N2Zz4=">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
+:root {
+  --bg: #0d0d0f;
+  --surface: #16161a;
+  --surface2: #1e1e24;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0f0f2;
+  --text2: #a0a0b0;
+  --text3: #606070;
+  --accent: #4f8ef7;
+  --accent2: #3a7ae0;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --gold: #e2b96f;
+}
+* { margin:0; padding:0; box-sizing:border-box; cursor: url('data:image/png;base64,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') 0 0, auto !important; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
 
-  :root {
-    --navy-deep: #0a1628;
-    --navy-mid: #0d1f3c;
-    --navy-light: #132a4e;
-    --navy-accent: #1a3a6b;
-    --blue-glow: #1e4d8c;
-    --gold: #7c6fcd;
-    --gold-light: #a594f9;
-    --text-primary: #e8edf5;
-    --text-secondary: #8fa8cc;
-    --text-muted: #4a6285;
-    --border: rgba(30, 77, 140, 0.4);
-    --border-bright: rgba(124, 111, 205, 0.35);
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'Heebo', sans-serif;
-    background: var(--navy-deep);
-    color: var(--text-primary);
-    min-height: 100vh;
-    overflow-x: hidden;
-    cursor: url('data:image/png;base64,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') 0 0, auto;
-  }
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      radial-gradient(ellipse at 20% 20%, rgba(30,77,140,0.25) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 80%, rgba(26,58,107,0.2) 0%, transparent 50%),
-      repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(165,148,249,0.18) 60px, rgba(165,148,249,0.18) 61px),
-      repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(165,148,249,0.18) 60px, rgba(165,148,249,0.18) 61px);
-    pointer-events: none;
-    z-index: 0;
-  }
-  .container { position: relative; z-index: 2; }
+/* Auth screen */
+#auth-screen {
+  display: flex; align-items: center; justify-content: center;
+  height: 100vh; background: var(--bg);
+  background-image: radial-gradient(ellipse at 30% 20%, rgba(79,142,247,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(79,142,247,0.04) 0%, transparent 60%);
+}
+.auth-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 40px; width: 400px; max-width: 95vw;
+}
+.auth-logo { text-align: center; margin-bottom: 32px; }
+.auth-logo .shield { font-size: 2.5rem; margin-bottom: 8px; }
+.auth-logo h1 { font-family: 'Rajdhani', sans-serif; font-size: 1.6rem; font-weight: 700; letter-spacing: 3px; color: var(--text); }
+.auth-logo p { font-size: 0.75rem; color: var(--text3); letter-spacing: 2px; margin-top: 4px; }
+.auth-tabs { display: flex; background: var(--bg); border-radius: 8px; padding: 4px; margin-bottom: 28px; }
+.auth-tab { flex: 1; padding: 8px; text-align: center; font-size: 0.82rem; font-weight: 500; color: var(--text2); cursor: pointer !important; border-radius: 6px; transition: all 0.2s; }
+.auth-tab.active { background: var(--surface2); color: var(--text); }
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 0.75rem; font-weight: 500; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.5px; }
+.field input, .field select {
+  width: 100%; background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 10px 14px; color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 0.85rem; outline: none; transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.field select option { background: var(--surface2); }
+.btn-primary {
+  width: 100%; background: var(--accent); border: none; border-radius: 8px;
+  padding: 11px; color: #fff; font-family: 'Inter', sans-serif; font-weight: 600;
+  font-size: 0.88rem; cursor: pointer !important; transition: all 0.2s; margin-top: 8px;
+}
+.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+.auth-error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 7px; padding: 10px 14px; font-size: 0.78rem; color: var(--danger); margin-bottom: 14px; display: none; }
+.pending-note { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 7px; padding: 10px 14px; font-size: 0.78rem; color: var(--warning); margin-top: 12px; display: none; }
 
-  /* ── HEADER ── */
-  header {
-    padding: 20px 40px; display: flex; align-items: center; gap: 16px;
-    border-bottom: 1px solid var(--border); background: rgba(10,22,40,0.85);
-    backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100;
-  }
-  .badge-icon { width: 52px; height: 52px; flex-shrink: 0; border-radius: 50%; mix-blend-mode: lighten; filter: brightness(1.1); }
-  .header-text h1 {
-    font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; font-weight: 700;
-    letter-spacing: 3px; color: var(--gold); text-transform: uppercase;
-  }
-  .header-text p { font-size: 0.76rem; color: var(--text-secondary); letter-spacing: 1px; margin-top: 2px; }
-  .rank-badge {
-    margin-right: auto; display: none; align-items: center; gap: 8px;
-    padding: 5px 12px; border: 1px solid var(--border-bright); border-radius: 4px;
-    background: rgba(200,168,75,0.08); font-size: 0.78rem; color: var(--gold-light);
-    font-family: 'Rajdhani', sans-serif; letter-spacing: 1px; font-weight: 600;
-  }
-  .rank-badge.visible { display: flex; }
-  .change-rank-btn {
-    background: rgba(124,111,205,0.12);
-    border: 1px solid rgba(165,148,249,0.35);
-    border-radius: 20px;
-    color: var(--gold-light);
-    font-size: 0.75rem;
-    cursor: pointer;
-    font-family: 'Heebo', sans-serif;
-    padding: 5px 12px;
-    transition: all 0.2s;
-    letter-spacing: 0.5px;
-  }
-  .change-rank-btn:hover {
-    background: rgba(165,148,249,0.22);
-    border-color: var(--gold-light);
-    color: #fff;
-    transform: scale(1.05);
-  }
+/* Main app */
+#app { display: none; flex-direction: column; height: 100vh; }
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 56px; background: var(--surface);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.header-logo { font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: 3px; color: var(--text); }
+.header-logo span { color: var(--accent); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-user { font-size: 0.78rem; color: var(--text2); }
+.header-role { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.role-cadet { background: rgba(56,189,248,0.15); color: #38bdf8; }
+.role-officer { background: rgba(165,148,249,0.15); color: #a594f9; }
+.role-fto { background: rgba(165,148,249,0.15); color: #a594f9; }
+.role-command { background: rgba(251,191,36,0.15); color: var(--warning); }
+.role-high_command { background: rgba(248,113,113,0.15); color: var(--danger); }
+.btn-logout { background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 4px 12px; color: var(--text2); font-size: 0.75rem; cursor: pointer !important; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.btn-logout:hover { border-color: var(--danger); color: var(--danger); }
 
-  /* ── SCREENS ── */
-  .screen { display: none; min-height: calc(100vh - 77px); position: relative; z-index: 2; }
-  .screen.active { display: flex; }
+/* Content */
+#content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
 
-  /* ── RANK SCREEN ── */
-  #rank-screen { flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; }
-  .rank-screen-title { text-align: center; margin-bottom: 44px; }
-  .rank-screen-title .sub { font-size: 0.82rem; color: var(--text-secondary); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-  .rank-screen-title h2 { font-family: 'Rajdhani', sans-serif; font-size: 2.2rem; font-weight: 700; }
-  .rank-screen-title h2 span { color: var(--gold); }
-  .divider { width: 60px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 14px auto 0; }
-  .rank-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 280px)); gap: 18px; max-width: 1200px; width: 100%; justify-content: center; }
-  .rank-card {
-    background: var(--navy-mid); border: 1px solid rgba(124,111,205,0.25); border-radius: 10px;
-    padding: 48px 32px; cursor: pointer; transition: all 0.22s ease; position: relative; overflow: hidden;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
-  }
-  .rank-card::before {
-    content: ''; position: absolute; top: 0; left: 10%; width: 80%; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    opacity: 0; transition: opacity 0.25s; border-radius: 2px;
-  }
-  .rank-card:hover {
-    background: var(--navy-light); border-color: rgba(124,111,205,0.5);
-    transform: translateY(-2px);
-    box-shadow: 0 0 18px rgba(124,111,205,0.25), 0 8px 28px rgba(0,0,0,0.3);
-  }
-  .rank-card:hover::before { opacity: 1; }
-  .rank-card { text-align: center; }
-  .rank-card .rank-icon { font-size: 3rem; margin-bottom: 16px; transition: transform 0.15s ease; }
-  .rank-card .rank-name { font-family: 'Rajdhani', sans-serif; font-size: 1.6rem; font-weight: 700; color: var(--gold-light); letter-spacing: 2px; }
-  .rank-card .rank-desc { display: none; }
-  .rank-card.other-card { grid-column: unset; display: block; padding: 26px 22px; text-align: center; }
-  .rank-card.other-card .rank-name { margin-bottom: 0; }
+/* Pending screen */
+#pending-screen {
+  display: none; align-items: center; justify-content: center;
+  flex: 1; flex-direction: column; gap: 16px;
+}
+.pending-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; padding: 40px; text-align: center; max-width: 440px; }
+.pending-card .p-icon { font-size: 3rem; margin-bottom: 16px; }
+.pending-card h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; color: var(--warning); margin-bottom: 10px; }
+.pending-card p { font-size: 0.83rem; color: var(--text2); line-height: 1.7; }
 
-  /* ── CHAT SCREEN ── */
-  #chat-screen { flex-direction: row; height: calc(100vh - 77px); }
-  .sidebar {
-    width: 268px; flex-shrink: 0; background: var(--navy-mid); border-left: 1px solid var(--border);
-    display: flex; flex-direction: column; padding: 22px 14px; overflow-y: auto;
-  }
-  .sidebar::-webkit-scrollbar { width: 3px; }
-  .sidebar::-webkit-scrollbar-thumb { background: var(--navy-accent); }
-  .sidebar-title { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; padding-right: 4px; }
-  .quick-btn {
-    background: var(--navy-light); border: 1px solid var(--border); border-radius: 6px;
-    padding: 9px 12px; color: var(--text-secondary); font-size: 0.8rem; font-family: 'Heebo', sans-serif;
-    cursor: pointer; text-align: right; line-height: 1.4; transition: all 0.18s; margin-bottom: 7px; width: 100%;
-  }
-  .quick-btn:hover { background: var(--navy-accent); border-color: var(--blue-glow); color: var(--text-primary); }
-  .quick-btn .q-icon { color: var(--gold); margin-left: 5px; font-style: normal; }
+/* Role screen */
+#role-screen {
+  display: none; align-items: center; justify-content: center;
+  flex: 1; flex-direction: column;
+  background-image: radial-gradient(ellipse at 50% 30%, rgba(79,142,247,0.05) 0%, transparent 60%);
+  position: relative; overflow: hidden;
+}
+#role-screen::before { content: '🛡️'; position: absolute; font-size: 400px; opacity: 0.02; top: 50%; left: 50%; transform: translate(-50%,-55%); pointer-events: none; }
+.role-title { text-align: center; margin-bottom: 32px; position: relative; z-index: 1; }
+.role-title p { font-size: 0.72rem; color: var(--text3); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+.role-title h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--text); }
+.role-divider { width: 48px; height: 1px; background: linear-gradient(90deg,transparent,var(--accent),transparent); margin: 12px auto 32px; }
+.cards-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; position: relative; z-index: 1; max-width: 900px; }
+.portal-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 28px 24px; width: 180px; text-align: center;
+  cursor: pointer !important; transition: all 0.2s ease; position: relative; overflow: hidden;
+}
+.portal-card::after { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; background: radial-gradient(ellipse at 50% 0%, var(--card-glow, rgba(79,142,247,0.15)), transparent 70%); }
+.portal-card:hover { transform: translateY(-3px); border-color: var(--card-color, var(--accent)); box-shadow: 0 0 20px var(--card-glow, rgba(79,142,247,0.2)); }
+.portal-card:hover::after { opacity: 1; }
+.portal-card .ci { font-size: 2.4rem; margin-bottom: 12px; display: block; transition: transform 0.2s; }
+.portal-card:hover .ci { transform: scale(1.1); }
+.portal-card .cn { font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: 1px; }
+.portal-card .cd { font-size: 0.68rem; color: var(--text3); margin-top: 5px; }
 
-  .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .chat-messages { flex: 1; overflow-y: auto; padding: 26px 30px; display: flex; flex-direction: column; gap: 18px; }
-  .chat-messages::-webkit-scrollbar { width: 4px; }
-  .chat-messages::-webkit-scrollbar-thumb { background: var(--navy-accent); border-radius: 2px; }
+/* FTO sidebar */
+#fto-sidebar {
+  display: none; position: fixed; bottom: 20px; left: 20px; z-index: 100;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 16px; min-width: 200px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+#fto-sidebar h4 { font-size: 0.7rem; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+.cadet-assigned { display: flex; flex-direction: column; gap: 2px; }
+.cadet-name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.cadet-tag { font-size: 0.72rem; color: var(--accent); }
+.no-cadet { font-size: 0.78rem; color: var(--text3); }
 
-  .message { display: flex; gap: 10px; max-width: 85%; animation: fadeIn 0.28s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
-  .message.user { flex-direction: row-reverse; margin-right: auto; margin-left: 0; }
-  .message.assistant { margin-left: auto; margin-right: 0; }
-  .msg-avatar {
-    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; font-size: 0.95rem;
-  }
-  .message.user .msg-avatar { background: var(--blue-glow); border: 1px solid rgba(37,99,168,0.5); }
-  .message.assistant .msg-avatar { background: rgba(200,168,75,0.15); border: 1px solid var(--border-bright); }
-  .msg-bubble { padding: 11px 15px; border-radius: 8px; font-size: 0.86rem; line-height: 1.75; white-space: pre-wrap; }
-  .message.user .msg-bubble { background: var(--blue-glow); border: 1px solid rgba(37,99,168,0.4); border-radius: 8px 0 8px 8px; }
-  .message.assistant .msg-bubble { background: var(--navy-mid); border: 1px solid var(--border); border-radius: 0 8px 8px 8px; }
-  .msg-bubble.error-bubble { background: rgba(180,40,40,0.15); border-color: rgba(220,60,60,0.4) !important; color: #f87171; }
+/* Portal screen */
+#portal-screen { display: none; flex-direction: column; flex: 1; }
+.portal-topbar { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.portal-back { background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 5px 14px; color: var(--text2); font-size: 0.78rem; cursor: pointer !important; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.portal-back:hover { color: var(--text); border-color: var(--border2); }
+.portal-name { font-size: 0.82rem; color: var(--text3); }
+.portal-iframe { flex: 1; border: none; width: 100%; }
 
-  .typing-indicator { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
-  .typing-indicator span { width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%; animation: bounce 1.2s infinite; }
-  .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-  .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+/* Boss Menu */
+#boss-screen { display: none; flex-direction: column; flex: 1; overflow-y: auto; padding: 24px; }
+.boss-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.boss-header h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--text); letter-spacing: 1px; }
+.boss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.boss-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+.boss-card h3 { font-size: 0.72rem; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.user-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.user-row:last-child { border-bottom: none; }
+.user-info .u-name { font-size: 0.83rem; font-weight: 600; color: var(--text); }
+.user-info .u-role { font-size: 0.7rem; color: var(--text3); margin-top: 2px; }
+.user-actions { display: flex; gap: 6px; }
+.ua-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 3px 10px; font-size: 0.7rem; cursor: pointer !important; transition: all 0.15s; color: var(--text2); font-family: 'Inter', sans-serif; }
+.ua-btn:hover { border-color: var(--accent); color: var(--accent); }
+.ua-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+.ua-btn.success:hover { border-color: var(--success); color: var(--success); }
+.boss-form { display: flex; flex-direction: column; gap: 10px; }
+.boss-form input, .boss-form select, .boss-form textarea {
+  background: var(--bg); border: 1px solid var(--border2); border-radius: 7px;
+  padding: 8px 12px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.82rem; outline: none;
+}
+.boss-form textarea { resize: vertical; min-height: 60px; }
+.boss-form input:focus, .boss-form select:focus, .boss-form textarea:focus { border-color: var(--accent); }
+.boss-submit { background: var(--accent); border: none; border-radius: 7px; padding: 8px; color: #fff; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.8rem; cursor: pointer !important; transition: background 0.2s; }
+.boss-submit:hover { background: var(--accent2); }
+.notes-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
+.note-item { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; }
+.note-item .note-author { font-size: 0.68rem; color: var(--text3); margin-bottom: 4px; }
+.note-item .note-text { font-size: 0.8rem; color: var(--text2); }
 
-  .chat-input-area { padding: 14px 30px 22px; border-top: 1px solid var(--border); background: rgba(10,22,40,0.6); }
-  .input-row {
-    display: flex; gap: 10px; align-items: flex-end; background: var(--navy-light);
-    border: 1px solid var(--border); border-radius: 8px; padding: 9px 13px; transition: border-color 0.2s;
-  }
-  .input-row:focus-within { border-color: var(--blue-glow); }
-  #chat-input {
-    flex: 1; background: none; border: none; outline: none; color: var(--text-primary);
-    font-family: 'Heebo', sans-serif; font-size: 0.88rem; resize: none; max-height: 120px; min-height: 22px; line-height: 1.5;
-  }
-  #chat-input::placeholder { color: var(--text-muted); }
-  #send-btn {
-    background: var(--gold); border: none; border-radius: 6px; width: 34px; height: 34px;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; transition: all 0.2s; color: var(--navy-deep);
-  }
-  #send-btn:hover { background: var(--gold-light); transform: scale(1.05); }
-  #send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-  .welcome-card {
-    background: var(--navy-mid); border: 1px solid var(--border-bright); border-radius: 10px;
-    padding: 26px; text-align: center; max-width: 480px; margin: auto;
-  }
-  .welcome-card .wc-icon { font-size: 2.4rem; margin-bottom: 10px; }
-  .welcome-card h3 { font-family: 'Rajdhani', sans-serif; font-size: 1.35rem; color: var(--gold-light); margin-bottom: 7px; letter-spacing: 1px; }
-  .welcome-card p { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
-
-  .video-embed {
-    margin: 10px 0 4px; border-radius: 8px; overflow: hidden;
-    border: 1px solid var(--border); background: #000; max-width: 400px;
-  }
-  .video-embed-header {
-    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
-    background: var(--navy-light); border-bottom: 1px solid var(--border);
-    font-size: 0.78rem; color: var(--text-secondary); font-family: 'Heebo', sans-serif;
-  }
-  .video-embed-header .yt-icon { color: #ff4444; font-size: 1rem; }
-  .video-embed iframe { display: block; width: 400px; height: 225px; border: none; }
-
-  .continue-btn {
-    display: inline-flex; align-items: center; gap: 7px;
-    margin: 12px 0 2px; padding: 8px 18px;
-    background: rgba(30,77,140,0.25); border: 1px solid var(--blue-glow);
-    border-radius: 6px; cursor: pointer; font-size: 0.82rem; color: var(--text-secondary);
-    font-family: 'Heebo', sans-serif; transition: all 0.2s;
-  }
-  .continue-btn:hover { background: rgba(30,77,140,0.45); color: var(--text-primary); }
-
-  .link-btn {
-    display: inline-flex; align-items: center; gap: 7px;
-    margin: 8px 0 2px; padding: 8px 14px;
-    background: rgba(124,111,205,0.15); border: 1px solid rgba(165,148,249,0.4);
-    border-radius: 6px; cursor: pointer; font-size: 0.8rem; color: var(--gold-light);
-    font-family: 'Heebo', sans-serif; transition: all 0.2s; position: relative;
-  }
-  .link-btn:hover { background: rgba(124,111,205,0.28); transform: translateY(-1px); }
-  .link-btn .lb-copied {
-    display: none; position: absolute; bottom: calc(100% + 8px); right: 50%;
-    transform: translateX(50%); background: var(--navy-light); border: 1px solid var(--border-bright);
-    border-radius: 6px; padding: 10px 14px; font-size: 0.78rem; color: var(--text-secondary);
-    white-space: nowrap; width: 260px; text-align: center; line-height: 1.6; z-index: 10;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-  }
-  .link-btn.show-tip .lb-copied { display: block; }
-
-  .pin-overlay {
-    display: none; position: fixed; inset: 0; z-index: 999;
-    background: rgba(5,12,25,0.85); backdrop-filter: blur(6px);
-    align-items: center; justify-content: center;
-  }
-  .pin-overlay.active { display: flex; }
-  .pin-card {
-    background: var(--navy-mid); border: 1px solid var(--border-bright);
-    border-radius: 12px; padding: 36px 32px; text-align: center; width: 320px;
-  }
-  .pin-card .pin-icon { font-size: 2.2rem; margin-bottom: 12px; }
-  .pin-card h3 {
-    font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; color: var(--gold-light);
-    letter-spacing: 1px; margin-bottom: 6px;
-  }
-  .pin-card p { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 20px; }
-  .pin-input {
-    width: 100%; background: var(--navy-light); border: 1px solid var(--border);
-    border-radius: 6px; padding: 10px 14px; color: var(--text-primary);
-    font-family: 'Heebo', sans-serif; font-size: 1.1rem; text-align: center;
-    outline: none; letter-spacing: 4px; margin-bottom: 10px;
-    transition: border-color 0.2s;
-  }
-  .pin-input:focus { border-color: var(--gold-light); }
-  .pin-input.error { border-color: #f87171; animation: shake 0.3s ease; }
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    25% { transform: translateX(-6px); }
-    75% { transform: translateX(6px); }
-  }
-  .pin-error { font-size: 0.78rem; color: #f87171; margin-bottom: 10px; min-height: 18px; }
-  .pin-submit {
-    width: 100%; background: var(--gold); border: none; border-radius: 6px;
-    padding: 10px; color: var(--navy-deep); font-family: 'Heebo', sans-serif;
-    font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: background 0.2s;
-  }
-  .pin-submit:hover { background: var(--gold-light); }
-  .pin-cancel {
-    margin-top: 10px; background: none; border: none; color: var(--text-muted);
-    font-size: 0.78rem; cursor: pointer; font-family: 'Heebo', sans-serif;
-    text-decoration: underline;
-  }
-  * { cursor: url('data:image/png;base64,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') 0 0, auto !important; }
-
-  /* ── ROSTER ── */
-  .roster-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 20px 24px; background: var(--navy-deep); }
-  .roster-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-  .roster-top h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; color: var(--gold-light); letter-spacing: 1px; margin-left: auto; }
-  .roster-search {
-    background: var(--navy-light); border: 1px solid var(--border); border-radius: 6px;
-    padding: 7px 12px; color: var(--text-primary); font-family: 'Heebo', sans-serif;
-    font-size: 0.82rem; outline: none; width: 160px; transition: border-color 0.2s;
-  }
-  .roster-search:focus { border-color: var(--gold-light); }
-  .roster-add-btn {
-    background: rgba(124,111,205,0.2); border: 1px solid var(--border-bright);
-    border-radius: 6px; padding: 7px 14px; color: var(--gold-light);
-    font-family: 'Heebo', sans-serif; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;
-  }
-  .roster-add-btn:hover { background: rgba(124,111,205,0.35); }
-
-  /* Filter bar */
-  .filter-bar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
-  .filter-bar label { font-size: 0.72rem; color: var(--text-muted); }
-  .filter-select {
-    background: var(--navy-light); border: 1px solid var(--border); border-radius: 5px;
-    padding: 4px 8px; color: var(--text-secondary); font-family: 'Heebo', sans-serif;
-    font-size: 0.76rem; outline: none; cursor: pointer;
-  }
-  .filter-select:focus { border-color: var(--gold-light); }
-  .filter-toggle {
-    background: var(--navy-light); border: 1px solid var(--border); border-radius: 5px;
-    padding: 4px 10px; color: var(--text-secondary); font-family: 'Heebo', sans-serif;
-    font-size: 0.74rem; cursor: pointer; transition: all 0.15s;
-  }
-  .filter-toggle.on { background: rgba(124,111,205,0.25); border-color: var(--gold-light); color: var(--gold-light); }
-  .filter-clear { background: none; border: none; color: var(--text-muted); font-size: 0.72rem; cursor: pointer; font-family: 'Heebo', sans-serif; text-decoration: underline; }
-
-  .roster-table-wrap { flex: 1; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border); }
-  .roster-table-wrap::-webkit-scrollbar { width: 4px; }
-  .roster-table-wrap::-webkit-scrollbar-thumb { background: var(--navy-accent); border-radius: 2px; }
-  table { width: 100%; border-collapse: collapse; }
-  thead { position: sticky; top: 0; z-index: 1; }
-  thead tr { background: var(--navy-light); }
-  th { padding: 9px 12px; text-align: right; font-size: 0.72rem; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
-  tbody tr:hover { background: rgba(124,111,205,0.06); }
-  td { padding: 8px 12px; font-size: 0.8rem; color: var(--text-primary); vertical-align: middle; }
-
-  .perm-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 600; margin: 1px; }
-  .perm-yes { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
-  .perm-no  { background: rgba(248,113,113,0.1); color: #888; border: 1px solid rgba(248,113,113,0.2); }
-  .unit-tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; background: rgba(124,111,205,0.2); color: var(--gold-light); border: 1px solid var(--border-bright); margin: 1px; }
-  .rating-val { font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; color: var(--gold-light); font-weight: 700; }
-  .flag-yes { color: #fbbf24; font-size: 0.75rem; }
-  .roster-action-btn { background: none; border: none; cursor: pointer; font-size: 0.82rem; color: var(--text-muted); padding: 3px 6px; border-radius: 4px; transition: all 0.15s; margin: 0 1px; }
-  .roster-action-btn:hover { color: var(--gold-light); background: rgba(124,111,205,0.15); }
-  .roster-empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.85rem; }
-
-  /* Modal */
-  .modal-overlay { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(5,12,25,0.82); backdrop-filter: blur(6px); align-items: center; justify-content: center; }
-  .modal-overlay.active { display: flex; }
-  .modal-card { background: var(--navy-mid); border: 1px solid var(--border-bright); border-radius: 12px; padding: 28px; width: 540px; max-width: 96vw; max-height: 90vh; overflow-y: auto; }
-  .modal-card::-webkit-scrollbar { width: 4px; } .modal-card::-webkit-scrollbar-thumb { background: var(--navy-accent); }
-  .modal-card h3 { font-family: 'Rajdhani', sans-serif; font-size: 1.25rem; color: var(--gold-light); margin-bottom: 18px; letter-spacing: 1px; }
-  .modal-section-title { font-size: 0.72rem; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
-  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .modal-field { margin-bottom: 10px; }
-  .modal-field label { display: block; font-size: 0.74rem; color: var(--text-muted); margin-bottom: 4px; }
-  .modal-field input, .modal-field select, .modal-field textarea {
-    width: 100%; background: var(--navy-light); border: 1px solid var(--border);
-    border-radius: 6px; padding: 8px 11px; color: var(--text-primary);
-    font-family: 'Heebo', sans-serif; font-size: 0.83rem; outline: none; transition: border-color 0.2s;
-  }
-  .modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus { border-color: var(--gold-light); }
-  .modal-field textarea { resize: vertical; min-height: 55px; }
-  .modal-field select option { background: var(--navy-mid); }
-  .checkbox-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .cb-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text-secondary); cursor: pointer; }
-  .cb-item input[type=checkbox] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--gold); }
-  .unit-cb-grid { display: flex; gap: 12px; flex-wrap: wrap; }
-  .rating-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .rating-item { display: flex; flex-direction: column; gap: 3px; }
-  .rating-item label { font-size: 0.73rem; color: var(--text-muted); }
-  .rating-item input { width: 100%; background: var(--navy-light); border: 1px solid var(--border); border-radius: 5px; padding: 6px 10px; color: var(--text-primary); font-family: 'Heebo', sans-serif; font-size: 0.83rem; outline: none; }
-  .rating-item input:focus { border-color: var(--gold-light); }
-  .avg-display { grid-column: span 2; text-align: center; padding: 8px; background: rgba(124,111,205,0.1); border-radius: 6px; font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; color: var(--gold-light); }
-  .modal-btns { display: flex; gap: 10px; margin-top: 18px; }
-  .modal-save { flex: 1; background: var(--gold); border: none; border-radius: 6px; padding: 9px; color: var(--navy-deep); font-family: 'Heebo', sans-serif; font-weight: 700; cursor: pointer; transition: background 0.2s; }
-  .modal-save:hover { background: var(--gold-light); }
-  .modal-cancel { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; padding: 9px; color: var(--text-secondary); font-family: 'Heebo', sans-serif; cursor: pointer; transition: all 0.2s; }
-  .modal-cancel:hover { background: rgba(255,255,255,0.1); }
-
-  /* Rating sub-modal */
-  .rate-modal-card { background: var(--navy-mid); border: 1px solid var(--border-bright); border-radius: 12px; padding: 28px; width: 400px; max-width: 96vw; }
-
-  * { cursor: url('data:image/png;base64,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') 0 0, auto !important; }
-
-  .credit-btn {
-    position: fixed; bottom: 14px; left: 16px; z-index: 50;
-    background: none; border: none; cursor: pointer;
-    font-size: 0.68rem; color: var(--text-muted); font-family: 'Heebo', sans-serif;
-    opacity: 0.5; transition: opacity 0.2s;
-  }
-  .credit-btn:hover { opacity: 1; color: var(--gold-light); }
-
-  .credit-popup {
-    display: none; position: fixed; bottom: 42px; left: 16px; z-index: 51;
-    background: var(--navy-mid); border: 1px solid var(--border-bright);
-    border-radius: 8px; padding: 12px 18px; font-family: 'Heebo', sans-serif;
-    font-size: 0.82rem; color: var(--gold-light); white-space: nowrap;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    animation: fadeIn 0.2s ease;
-  }
-  .credit-popup.show { display: block; }
-
-  /* ── MOBILE RESPONSIVE ── */
-  @media (max-width: 768px) {
-    header { padding: 12px 16px; gap: 10px; }
-    header h1 { font-size: 1rem; }
-    header p { display: none; }
-    .rank-badge { gap: 6px; }
-    .change-rank-btn { font-size: 0.7rem; padding: 4px 8px; }
-
-    /* Rank screen */
-    #rank-screen { padding: 30px 16px; }
-    .rank-screen-title h2 { font-size: 1.5rem; }
-    .rank-grid {
-      grid-template-columns: repeat(2, 1fr) !important;
-      max-width: 100% !important;
-      gap: 12px !important;
-    }
-    .rank-card { padding: 22px 12px !important; }
-    .rank-card .rank-icon { font-size: 2rem !important; }
-    .rank-card .rank-name { font-size: 1rem !important; }
-
-    /* Chat screen */
-    #chat-screen { flex-direction: column; height: auto; min-height: calc(100vh - 60px); }
-    .sidebar {
-      width: 100% !important; border-left: none !important;
-      border-bottom: 1px solid var(--border);
-      padding: 12px 16px; max-height: 200px; overflow-y: auto;
-    }
-    .sidebar-title { margin-bottom: 8px; }
-    #quick-questions { display: flex; flex-wrap: wrap; gap: 6px; }
-    .quick-btn { width: auto; padding: 6px 12px; font-size: 0.78rem; margin-bottom: 0; }
-    .chat-main { flex: 1; }
-    .chat-messages { padding: 16px; }
-    .msg-bubble { font-size: 0.82rem; }
-
-    /* Roster screen */
-    #roster-screen { padding: 0; }
-    .roster-wrap { padding: 12px 14px; }
-    .roster-top { flex-wrap: wrap; gap: 8px; }
-    .roster-top h2 { font-size: 1.1rem; order: -1; width: 100%; }
-    .roster-search { width: 100% !important; }
-    .roster-add-btn { width: 100%; text-align: center; }
-    .filter-bar { gap: 6px; }
-    .filter-select { font-size: 0.7rem; padding: 3px 6px; }
-    .filter-toggle { font-size: 0.7rem; padding: 3px 8px; }
-    .roster-table-wrap { overflow-x: auto; }
-    table { min-width: 600px; }
-    th, td { padding: 6px 8px; font-size: 0.72rem; }
-
-    /* Modal */
-    .modal-card { padding: 20px 16px; width: 95vw; }
-    .modal-grid { grid-template-columns: 1fr; }
-    .checkbox-grid { grid-template-columns: repeat(2, 1fr); }
-
-    /* PIN */
-    .pin-card { width: 90vw; padding: 24px 20px; }
-
-    /* Credit */
-    .credit-btn { font-size: 0.62rem; bottom: 10px; left: 10px; }
-  }
-
-  @media (max-width: 400px) {
-    .rank-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
-    .rank-card { padding: 18px 8px !important; }
-    .rank-card .rank-icon { font-size: 1.7rem !important; }
-    .rank-card .rank-name { font-size: 0.9rem !important; }
-  }
-
-
-  .section-divider {
-    margin: 24px 0 16px; border: none; border-top: 1px solid var(--border-bright);
-  }
-  .section-title {
-    font-family: 'Rajdhani', sans-serif; font-size: 1.2rem; color: var(--gold-light);
-    letter-spacing: 1px; margin-bottom: 14px;
-  }
-
-  #fto-select-screen { flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; }
-  .sub-grid { display: grid; grid-template-columns: repeat(2, 280px); gap: 18px; justify-content: center; margin-top: 30px; }
+/* Mouse glow */
+#glow-canvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; }
 </style>
 </head>
 <body>
-<canvas id="glow-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1;"></canvas>
+<canvas id="glow-canvas"></canvas>
 
-<!-- PIN OVERLAY -->
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="shield">🛡️</div>
+      <h1>LOS SANTOS PD</h1>
+      <p>PATROL UNIT</p>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">התחברות</div>
+      <div class="auth-tab" onclick="switchTab('register')">הרשמה</div>
+    </div>
+    <div id="auth-error" class="auth-error"></div>
 
-<div class="modal-overlay" id="cadet-modal">
-  <div class="modal-card">
-    <h3 id="cadet-modal-title">הוסף קדט</h3>
-    <div class="modal-grid">
-      <div class="modal-field"><label>שם הקדט</label><input type="text" id="cf-name" placeholder="ג'ון דו" /></div>
-      <div class="modal-field"><label>מספר תג</label><input type="text" id="cf-badge" placeholder="213" /></div>
-      <div class="modal-field"><label>דרגה</label>
-        <select id="cf-rank">
-          <option>Cadet</option><option>Officer</option><option>Sr. Officer</option>
+    <!-- Login -->
+    <div id="login-form">
+      <div class="field"><label>שם משתמש</label><input type="text" id="l-username" placeholder="השם שלך" /></div>
+      <div class="field"><label>סיסמה</label><input type="password" id="l-password" placeholder="••••••••" /></div>
+      <button class="btn-primary" onclick="doLogin()">כניסה למערכת</button>
+    </div>
+
+    <!-- Register -->
+    <div id="register-form" style="display:none;">
+      <div class="field"><label>שם מלא</label><input type="text" id="r-name" placeholder="ג'ון דו" /></div>
+      <div class="field"><label>שם משתמש</label><input type="text" id="r-username" placeholder="בחר שם משתמש" /></div>
+      <div class="field"><label>דרגה</label>
+        <select id="r-role">
+          <option value="cadet">קאדט</option>
+          <option value="officer">שוטר</option>
+          <option value="fto">FTO</option>
+          <option value="command">פיקוד</option>
+          <option value="high_command">פיקוד גבוה</option>
         </select>
       </div>
-      <div class="modal-field"><label>הולך ליום ראיונות</label>
-        <select id="cf-interview">
-          <option value="">לא</option>
-          <option value="ילד DM">ילד DM</option>
-          <option value="FIB">FIB</option>
-          <option value="GSD">GSD</option>
-          <option value="ילד DM ונהיגה">ילד DM ונהיגה</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-field" style="display:flex;align-items:center;gap:10px;">
-      <label style="margin:0;">רוצה לעזוב את הפטרול</label>
-      <input type="checkbox" id="cf-leave" style="width:16px;height:16px;accent-color:var(--gold);" />
-    </div>
-    <div class="modal-field" style="display:flex;align-items:center;gap:10px;margin-top:10px;">
-      <label style="margin:0;">עבר אימון מסכם</label>
-      <input type="checkbox" id="cf-training" style="width:16px;height:16px;accent-color:var(--gold);" />
-    </div>
-    <div class="modal-field" style="margin-top:10px;">
-      <label>מספר בחינות לאופיסר שביצע</label>
-      <select id="cf-exams">
-        <option value="0">0</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-      </select>
-    </div>
-    <div class="modal-field" style="margin-top:10px;">
-      <label>הערכה אישית</label>
-      <textarea id="cf-notes" placeholder="הערות על הקדט..."></textarea>
-    </div>
-    <div class="modal-btns">
-      <button class="modal-save" onclick="saveCadet()">שמור</button>
-      <button class="modal-cancel" onclick="closeCadetModal()">ביטול</button>
+      <div class="field"><label>סיסמה</label><input type="password" id="r-password" placeholder="מינימום 6 תווים" /></div>
+      <button class="btn-primary" onclick="doRegister()">הרשמה</button>
+      <div id="pending-note" class="pending-note">⏳ דרגת פיקוד דורשת אישור מנהל. תוכל להיכנס לאחר האישור.</div>
     </div>
   </div>
 </div>
 
-<div class="pin-overlay" id="pin-overlay">
-  <div class="pin-card">
-    <div class="pin-icon">🔒</div>
-    <h3 id="pin-title">הזן קוד גישה</h3>
-    <p id="pin-subtitle">יחידה זו מוגנת בקוד</p>
-    <input type="password" class="pin-input" id="pin-input" placeholder="••••" maxlength="10" onkeydown="if(event.key==='Enter') submitPin()" />
-    <div class="pin-error" id="pin-error"></div>
-    <button class="pin-submit" onclick="submitPin()">כניסה</button>
-    <br><button class="pin-cancel" onclick="cancelPin()">ביטול</button>
-  </div>
-</div>
-
-<!-- ROSTER MODAL -->
-<div class="modal-overlay" id="roster-modal">
-  <div class="modal-card">
-    <h3 id="modal-title">הוסף שוטר</h3>
-    <div class="modal-grid">
-      <div class="modal-field"><label>שם השוטר</label><input type="text" id="f-name" placeholder="ג'ון דו" /></div>
-      <div class="modal-field"><label>מספר תג</label><input type="text" id="f-badge" placeholder="213" /></div>
-      <div class="modal-field"><label>דרגה</label>
-        <select id="f-rank">
-          <option>Cadet</option>
-          <option>Command</option>
-          <option>Officer</option>
-          <option>Sr. Officer</option>
-          <option>Corporal</option>
-          <option>Sergeant</option>
-          <option>Lieutenant</option>
-        </select>
-      </div>
-      <div class="modal-field"><label>הולך ליום ראיונות</label>
-        <select id="f-interview">
-          <option value="">לא</option>
-          <option value="ילד DM">ילד DM</option>
-          <option value="FIB">FIB</option>
-          <option value="GSD">GSD</option>
-          <option value="ילד DM ונהיגה">ילד DM ונהיגה</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-field" style="display:flex;align-items:center;gap:10px;">
-      <label style="margin:0;">רוצה לעזוב את הפטרול</label>
-      <input type="checkbox" id="f-leave" style="width:16px;height:16px;accent-color:var(--gold);" />
-    </div>
-    <div class="modal-section-title">יחידות</div>
-    <div class="unit-cb-grid">
-      <label class="cb-item"><input type="checkbox" id="f-unit-fto" onchange="updateFtoVisibility()" /> FTO</label>
-      <label class="cb-item"><input type="checkbox" id="f-unit-moto" onchange="if(this.checked){document.getElementById('p-moto').checked=true;}" /> אופנועים</label>
-      <label class="cb-item"><input type="checkbox" id="f-unit-k9" /> K9</label>
-    </div>
-    <div class="modal-field" id="fto-interest-wrap" style="margin-top:12px;">
-      <label>מעוניין בFTO?</label>
-      <select id="f-fto-interest">
-        <option value="">לא ידוע</option><option value="כן">כן</option><option value="לא">לא</option>
-      </select>
-    </div>
-    <div class="modal-section-title">אישורים</div>
-    <div class="checkbox-grid">
-      <label class="cb-item"><input type="checkbox" id="p-mace" /> מרסס</label>
-      <label class="cb-item"><input type="checkbox" id="p-shotgun" /> שוטגאן</label>
-      <label class="cb-item"><input type="checkbox" id="p-sniper" /> סנייפר</label>
-      <label class="cb-item"><input type="checkbox" id="p-moto" /> אופנוע</label>
-      <label class="cb-item"><input type="checkbox" id="p-heli" /> מסוק</label>
-      <label class="cb-item"><input type="checkbox" id="p-tac" /> טקטי</label>
-      <label class="cb-item"><input type="checkbox" id="p-inter" /> אינטרספטור</label>
-      <label class="cb-item"><input type="checkbox" id="p-dog" /> כלב</label>
-    </div>
-    <div id="fto-ratings-wrap" style="display:none;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border);">
-        <span style="font-size:0.72rem;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;">דירוג FTO</span>
-        <button onclick="resetFtoRatings()" style="background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);border-radius:5px;padding:3px 10px;color:#f87171;font-size:0.72rem;cursor:pointer;font-family:Heebo,sans-serif;">אפס דירוג</button>
-      </div>
-      <div class="rating-grid">
-        <div class="rating-item"><label>אימונים מסכמים</label><input type="number" id="r-train" min="1" max="10" step="0.1" placeholder="1-10" oninput="clampRating(this);updateAvg()" /></div>
-        <div class="rating-item"><label>אקדמיות</label><input type="number" id="r-acad" min="1" max="10" step="0.1" placeholder="1-10" oninput="clampRating(this);updateAvg()" /></div>
-        <div class="rating-item"><label>בחינות לאופיסר</label><input type="number" id="r-exam" min="1" max="10" step="0.1" placeholder="1-10" oninput="clampRating(this);updateAvg()" /></div>
-        <div class="avg-display">דירוג FTO: <span id="r-avg">—</span></div>
-      </div>
-    </div>
-    <div class="modal-field" style="margin-top:12px;">
-      <label>הערכה אישית</label>
-      <textarea id="f-notes" placeholder="הערות על השוטר..."></textarea>
-    </div>
-    <div class="modal-btns">
-      <button class="modal-save" onclick="saveOfficer()">שמור</button>
-      <button class="modal-cancel" onclick="closeModal()">ביטול</button>
-    </div>
-  </div>
-</div>
-
-<div class="container">
-  <!-- HEADER -->
-  <header id="main-header">
-    <div style="width:46px;height:46px;background:rgba(124,111,205,0.15);border:1px solid rgba(165,148,249,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.9rem;flex-shrink:0;">🛡️</div>
-    <div class="header-text">
-      <h1>FTO Website</h1>
-      <p>אנחנו לא ילדי DM</p>
-    </div>
-    <div class="rank-badge" id="rank-badge">
-      <span id="badge-rank-name"></span>
-      <button class="change-rank-btn" onclick="changeRank()">חזור להתחלה</button>
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-logo">LOS <span>SANTOS</span> PD</div>
+    <div class="header-right">
+      <span class="header-user" id="header-username"></span>
+      <span class="header-role" id="header-role-badge"></span>
+      <button class="btn-logout" onclick="doLogout()">יציאה</button>
     </div>
   </header>
 
-  <!-- RANK SCREEN -->
-  <div class="screen active" id="rank-screen">
-    <div>
-      <div class="rank-screen-title">
-        <p class="sub">ברוך הבא למרכז ההכשרה</p>
-        <h2>בחר את <span>הקטגוריה שלך</span></h2>
-        <div class="divider"></div>
+  <div id="content">
+    <!-- Pending -->
+    <div id="pending-screen">
+      <div class="pending-card">
+        <div class="p-icon">⏳</div>
+        <h2>ממתין לאישור</h2>
+        <p>בקשתך נשלחה למנהל המערכת.<br>תוכל להיכנס לאחר שהבקשה תאושר.<br><br>
+        <span style="color:var(--text3);font-size:0.75rem;">לפניות: פנה למפקד בדיסקורד</span></p>
       </div>
-      <div class="rank-grid">
-        <div class="rank-card" onclick="selectRank('Cadet')">
-          <div class="rank-icon">🎓</div>
-          <div class="rank-name">Cadet</div>
+    </div>
+
+    <!-- Role/Category screen -->
+    <div id="role-screen">
+      <div class="role-title">
+        <p>ברוך הבא</p>
+        <h2>בחר קטגוריה</h2>
+      </div>
+      <div class="role-divider"></div>
+      <div class="cards-grid" id="portal-cards"></div>
+    </div>
+
+    <!-- Portal -->
+    <div id="portal-screen">
+      <div class="portal-topbar">
+        <button class="portal-back" onclick="closePortal()">← חזור</button>
+        <span class="portal-name" id="portal-name"></span>
+      </div>
+      <iframe class="portal-iframe" id="portal-iframe" src=""></iframe>
+    </div>
+
+    <!-- Boss Menu -->
+    <div id="boss-screen">
+      <div class="boss-header">
+        <h2>🔧 Boss Menu</h2>
+        <button class="portal-back" onclick="showRoleScreen()">← חזור</button>
+      </div>
+      <div class="boss-grid">
+        <!-- Pending approvals -->
+        <div class="boss-card">
+          <h3>⏳ ממתינים לאישור</h3>
+          <div id="boss-pending-list"><span style="font-size:0.78rem;color:var(--text3);">טוען...</span></div>
         </div>
-        <div class="rank-card" onclick="selectRank('FTO Unit')">
-          <div class="rank-icon">🚔</div>
-          <div class="rank-name">FTO Unit</div>
+        <!-- All users -->
+        <div class="boss-card">
+          <h3>👥 כל המשתמשים</h3>
+          <div id="boss-users-list"><span style="font-size:0.78rem;color:var(--text3);">טוען...</span></div>
         </div>
-        <div class="rank-card" onclick="selectRank('Command')">
-          <div class="rank-icon">⭐⭐⭐</div>
-          <div class="rank-name">Command</div>
+        <!-- Assign cadet to FTO -->
+        <div class="boss-card">
+          <h3>🎓 שיוך קאדט ל-FTO</h3>
+          <div class="boss-form">
+            <select id="boss-fto-select"><option value="">בחר FTO...</option></select>
+            <input type="text" id="boss-cadet-name" placeholder="שם הקאדט" />
+            <input type="text" id="boss-cadet-tag" placeholder="תג הקאדט" />
+            <button class="boss-submit" onclick="assignCadet()">שייך קאדט</button>
+          </div>
         </div>
-        <div class="rank-card" onclick="selectRank('Motorcycle Unit')">
-          <div class="rank-icon">🏍️</div>
-          <div class="rank-name">Motorcycle Unit</div>
+        <!-- Notes -->
+        <div class="boss-card">
+          <h3>📝 הוסף נוט לשוטר</h3>
+          <div class="boss-form">
+            <select id="boss-note-user"><option value="">בחר שוטר...</option></select>
+            <textarea id="boss-note-text" placeholder="כתוב נוט..."></textarea>
+            <button class="boss-submit" onclick="addNote()">הוסף נוט</button>
+          </div>
         </div>
-        <div class="rank-card" onclick="selectRank('K9 Unit')">
-          <div class="rank-icon">🐕</div>
-          <div class="rank-name">K9 Unit</div>
+        <!-- View notes -->
+        <div class="boss-card">
+          <h3>📋 נוטים</h3>
+          <div class="boss-form" style="margin-bottom:10px;">
+            <select id="boss-view-notes-user" onchange="loadNotes(this.value)"><option value="">בחר שוטר...</option></select>
+          </div>
+          <div class="notes-list" id="notes-list"><span style="font-size:0.78rem;color:var(--text3);">בחר שוטר לצפייה בנוטים</span></div>
+        </div>
+        <!-- Promote to admin -->
+        <div class="boss-card">
+          <h3>⭐ הפוך למנהל</h3>
+          <div class="boss-form">
+            <select id="boss-promote-user"><option value="">בחר משתמש...</option></select>
+            <button class="boss-submit" onclick="promoteToAdmin()">הפוך למנהל</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
+</div>
 
-
-  <!-- FTO SELECT SCREEN -->
-  <div class="screen" id="fto-select-screen">
-    <div>
-      <div class="rank-screen-title">
-        <p class="sub">FTO Unit</p>
-        <h2>בחר <span>אזור</span></h2>
-        <div class="divider"></div>
-      </div>
-      <div class="sub-grid">
-        <div class="rank-card" onclick="enterFtoUnit()">
-          <div class="rank-icon">🚔</div>
-          <div class="rank-name">FTO Unit</div>
-        </div>
-        <div class="rank-card" onclick="enterFtoCadetRoster()">
-          <div class="rank-icon">🎓</div>
-          <div class="rank-name">קדט רוסטר</div>
-        </div>
-      </div>
-      <div style="text-align:center;margin-top:24px;">
-        <button class="change-rank-btn" onclick="changeRank()">חזור להתחלה</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CHAT SCREEN -->
-  <div class="screen" id="chat-screen">
-    <div class="sidebar" id="sidebar">
-      <div class="sidebar-title">מה תרצה לדעת?</div>
-      <div id="quick-questions"></div>
-    </div>
-    <div class="chat-main">
-      <div class="chat-messages" id="chat-messages"></div>
-    </div>
-  </div>
-
-  <!-- ROSTER SCREEN -->
-  <div class="screen" id="roster-screen">
-    <div class="roster-wrap">
-      <div id="main-roster-section">
-      <div class="roster-top">
-        <h2>🛡️ רוסטר המשטרה</h2>
-        <input type="text" class="roster-search" id="roster-search" placeholder="🔍 חפש שוטר..." oninput="applyFilters()" />
-        <button class="roster-add-btn" onclick="openModal()">+ הוסף שוטר</button>
-      </div>
-      <div class="filter-bar">
-        <label>סינון:</label>
-        <select class="filter-select" id="fil-rank" onchange="applyFilters()">
-          <option value="">כל הדרגות</option>
-          <option value="Cadet">Cadet</option>
-          <option value="Command">Command</option>
-          <option value="Officer">Officer</option>
-          <option value="Sr. Officer">Sr. Officer</option>
-          <option value="Corporal">Corporal</option>
-          <option value="Sergeant">Sergeant</option>
-          <option value="Lieutenant">Lieutenant</option>
-        </select>
-        <select class="filter-select" id="fil-unit" onchange="applyFilters()">
-          <option value="">כל היחידות</option>
-          <option value="fto">FTO</option><option value="moto">אופנועים</option><option value="k9">K9</option>
-        </select>
-        <select class="filter-select" id="fil-perm" onchange="applyFilters()">
-          <option value="">כל האישורים</option>
-          <option value="mace">מרסס</option><option value="shotgun">שוטגאן</option>
-          <option value="sniper">סנייפר</option><option value="moto">אופנוע</option>
-          <option value="heli">מסוק</option><option value="tac">טקטי</option>
-          <option value="inter">אינטרספטור</option><option value="dog">כלב</option>
-        </select>
-        <button class="filter-toggle" id="fil-leave" onclick="toggleFilter('fil-leave','leave')">רוצה לעזוב</button>
-        <button class="filter-toggle" id="fil-interview" onclick="toggleFilter('fil-interview','interview')">יום ראיונות</button>
-        <button class="filter-toggle" id="fil-fto-interest" onclick="toggleFilter('fil-fto-interest','ftoInterest')">מעוניין ב-FTO</button>
-        <button class="filter-clear" onclick="clearFilters()">נקה סינון</button>
-      </div>
-      <div class="roster-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>שם</th><th>תג</th><th>דרגה</th><th>יחידות</th>
-              <th>רוצה לעזוב</th><th>ראיונות</th><th>FTO?</th>
-              <th>אישורים</th><th>דירוג FTO</th><th>הערכה</th><th></th>
-            </tr>
-          </thead>
-          <tbody id="roster-body">
-            <tr><td colspan="11" class="roster-empty">⏳ טוען רוסטר...</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      </div>
-      <hr class="section-divider" />
-      <div class="roster-top">
-        <h2 class="section-title">🎓 קדט רוסטר</h2>
-        <input type="text" class="roster-search" id="cadet-search" placeholder="🔍 חפש קדט..." oninput="applyCadetFilters()" />
-        <button class="roster-add-btn" onclick="openCadetModal()">+ הוסף קדט</button>
-      </div>
-      <div class="filter-bar">
-        <label>סינון:</label>
-        <select class="filter-select" id="cfil-rank" onchange="applyCadetFilters()">
-          <option value="">כל הדרגות</option>
-          <option value="Cadet">Cadet</option>
-          <option value="Officer">Officer</option>
-          <option value="Sr. Officer">Sr. Officer</option>
-        </select>
-        <button class="filter-toggle" id="cfil-training" onclick="toggleCadetFilter('cfil-training','training')">עבר אימון מסכם</button>
-        <button class="filter-toggle" id="cfil-leave" onclick="toggleCadetFilter('cfil-leave','leave')">רוצה לעזוב</button>
-        <button class="filter-toggle" id="cfil-interview" onclick="toggleCadetFilter('cfil-interview','interview')">יום ראיונות</button>
-        <button class="filter-clear" onclick="clearCadetFilters()">נקה סינון</button>
-      </div>
-      <div class="roster-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>שם</th><th>תג</th><th>דרגה</th><th>אימון מסכם</th>
-              <th>בחינות לאופיסר</th><th>רוצה לעזוב</th><th>ראיונות</th><th>הערכה</th><th></th>
-            </tr>
-          </thead>
-          <tbody id="cadet-roster-body">
-            <tr><td colspan="9" class="roster-empty">⏳ טוען קדט רוסטר...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+<!-- FTO Sidebar -->
+<div id="fto-sidebar">
+  <h4>🎓 קאדט השבוע</h4>
+  <div class="cadet-assigned" id="cadet-assigned">
+    <span class="no-cadet">לא שויך קאדט</span>
   </div>
 </div>
 
 <script>
-var currentRank = null;
-var pendingRank = null;
-
-var PINS = {
-  'FTO Unit': '4332',
-  'Command': '218811',
-  'Motorcycle Unit': '3442',
-  'K9 Unit': '1001'
-};
-
-var ANSWERS = {};
-ANSWERS['מה הם הנהלים?'] = "📋 נוהל עליה למשמרת:\nא. לכתוב 10-8 ב pchat.\nב. לעלות לקשר 1.\nג. לוודא שהפק\"ל המלא נמצא עליו ולהשלים במידת הצורך.\nד. להדליק מצלמת גוף (bodycam)\n\n📋 נוהל ירידה ממשמרת:\nשיוצאים מהשרת יש לכתוב 10-7 ב pchat ולצאת.\nבמידה ונשארים בשרת ומעוניינים לרדת ממשמרת יש לפעול על פי סדר הפעולות הבא:\nא. לבקש אישור ממפקד - אין לרדת ממשמרת ולהישאר בשרת ללא אישור מפקד.\nב. להוריד את המדים ולעבור ללבוש אזרחי מלא.\nג. להוריד את כל הציוד המשטרתי ולשים בלוקר האישי.\nד. לעדכן את התג כך: XXX-10-7, לדוגמה: 213-10-7.\n\n📋 נוהל 10-6 (הפסקה):\nא. לשים אדום בפאנל.\nב. לכתוב 10-6 ב pchat.\nג. לכתוב 10-6/, זה באופן אוטומטי את ישנה התג כנדרש עם השעה המדוייקת של היציאה להפסקה ויעביר את השוטר לקשר 10.6 (קשר הפסקה).\nד. ללכת ל break room בתחנה.\n\n📋 נוהל חדר תדריכים:\nא. עולים לקשר 1.\nב. מוודאים כי כל הפק\"ל נמצא עליכם, במידה וחוסר להשלים.\nג. מורידים ווסט, כובע ומשקפי שמש לפני הכניסה לחדר התדריכים.\nד. בחדר תדריכים ומתיישבים בצורה מסודרת עם היחידה או המחוז שלכם.\n\n📋 נוהל עצירה שגרתית:\nא. יש להדליק אורות, להשתמש בסירנה ולהגיד לנהג לעצור בצד עם שני הגלגלים הימניים על המדרכה. יש לוודא שהאיזור בטוח לעצירה ולא מפריע לתנועה. אורות הניידת ישארו דלוקים במשך כל העצירה.\nב. יש לעצור מאחורי הרכב בזווית של 45 מעלות כלפי הכביש.\nג. יש להורות לנהג לדומם מנוע ולשים מפתחות על גג הרכב ואם זה באופנוע אז על הרצפה.\nד. רק לאחר שהנהג שם מפתחות על הרכב, השוטר שיושב לצד הנהג יוצא מהניידת וניגש לחלון הרכב. הנהג נשאר בניידת במהלך כל העצירה.\nה. השוטר שניגש לרכב יציג את עצמו מילולית ובנוסף יציג את התג שלו.\nו. השוטר יבקש מהנהג להזדהות בפניו ולהציג רשיונות. יש לוודא שהרכב שייך לנהג ושלא מדובר ברכב גנוב, בנוסף שאין כלפיו צו מעצר פעיל. מומלץ להיעזר לשם כך בשוטר שנשאר בניידת, שיחפש את הפרטים תוך כדי.\nז. השוטר יציג בפני הנהג את הסיבה לעצירה.\nח. במידה ומדובר בליקוי ברכב/עבירת תנועה ניתן לתת דוח במקום/אזהרה בהתאם לשיקול הדעת. חובה לתעד את העצירה - report ב MDT + הערה בפרופיל. במקרים חריגים (חשד לפלילים, סירוב להזדהות, נהיגה בשכרות, פסילה) - ניתן לשקול עיכוב/מעצר.\nט. עם סיום ההליכים, יש להורות לנהג בפירוש שהוא משוחרר ורשאי לנסוע, לאחר מכן להיכנס לניידת. חכו שהרכב יחל בנסיעה ורק אז תסעו גם אתם.\n⚠️ יש להקפיד על שיח מכבד והולם במהלך כל העצירה ולשמור על קור רוח במקרה שמדברים אליכם בצורה לא מכבדת!\n\n📋 נוהל מרדף רגלי:\nא. השוטר שיושב לצד הנהג פורק מהניידת ופותח בריצה אחר החשוד.\nב. הנהג עוקב אחר המרדף עם הניידת לאט ובזהירות ומדווח על פתיחת המרדף בקשר, בצורה הזו: תג + כמות השוטרים פתחנו ב 10-70 לאחר <תיאור קצר של החשוד> שביצע <תיאור העבירה> זקוקים/לא זקוקים ל 10-78 (תגבורת) ל <מיקום שלכם>. בנוסף יש לציין מספר קשר פנוי אליו יעלו כלל השוטרים שיגיבו.\nדוגמא לדיווח נכון: 213 פלוס אחד פתחתנו ב 10-70 אחר חשוד בלבוש שחור עם מסיכה לבנה שניסה לבצע 10-35 זקוקים ל 10-78 לארנה, לעלות קשר 3.\nג. השוטר שרודף אחר החשוד רגלית חייב לציית לנהלים הבאים:\nניתן לתת טאקל לאחר דקה מתחילת המרדף ולהמתין דקה נוספת בין כל טאקל נוסף.\nניתן לתת טייזר 2 דקות מתחילת המרדף ולהמתין 2 דקות נוספות לפני טייזר נוסף.\nבמידה והחשוד מנסה לעלות לרכב איסוף ניתן לטייזר אותו כדי למנוע זאת.\nבמידה והפושע שולף נשק חם במהלך המרדף יש להזהיר אותו מילולית להוריד את הנשק, לאחר מכן לירות 3 יריות אזהרה לאוויר. במידה והוא לא מוריד את הנשק יש לירות לעבר פלג גוף תחתון (ברכיים ומטה).\n\n📋 נוהל ביפים:\nהתערבות משטרתית בביפים מתבצעת רק במקרים חריגים שבהם הביף מתקיים באזורים מרכזיים בתוך שטחי העיר, כגון Benny's. לפני כל התערבות, על מפקד האירוע או מפקד אחר שנמצא במקום לרשום ב-/POLICE הודעה לחשודים, ולבקש מהם לקחת את העימות למקום אחר שאינו בשטח עירוני או אזור מרכזי.\nאם נשלחו הודעות פעמיים או שלוש והחשודים לא מתפנים, ממשיכים לסכן אזרחים ומסרבים לשתף פעולה, מפקד בדרגת פיקוד גבוהה רשאי לאשר התערבות ישירה - כולל מעצרים או ניטרול לפי הצורך.\nכאשר הביף מתקיים מחוץ לשטחי העיר, צוות הבילוש מעלה מסוק ומבצע איסוף מידע מודיעיני מסווג לצורך מעקב, זיהוי, תפיסה ומעצר עתידי של החשודים בגין העבירות שביצעו.\n\n📋 נוהל מעצר חשוד:\nא. לאחר האזיקה יש להקריא לחשוד את זכויותיו (זכויות מירנדה) בהקדם האפשרי. אם מתאפשר אז ישר לאחר האזיקה, אם יש איום בשטח אז להכניס קודם את החשוד לניידת ולאחר מכן להקריא את הזכויות. לאחר הקראת הזכויות יש לשאול את החשוד האם הזכויות מובנות, במידה וענה בשלילה חובה להקריא לו בפעם השנייה. במידה והחשוד נפצע ולא בהכרה יש להקריא לו את הזכויות לאחר הטיפול הרפואי.\n\"יש לך את הזכות לשמור על השתיקה, כל דבר שתגיד עלול ואף ישמש נגדך בבית המשפט. יש לך את הזכות לשכור עורך דין, במידה ואין לך את הכסף המדינה תממן עבורך אחד. יש לך את הזכות לקבל אוכל, מים, טיפול רפואי ושיחת טלפון בת 60 שניות.\"\nב. לאחר ההגעה עם החשוד לתחנה, יש לבצע עליו חיפוש ולקחת את כלל הדברים הלא חוקיים שברשותו, אמצעים שעלולים לסכן אתכם או את עצמו ובנוסף את מכשיר הקשר + טלפון שלו (את מכשיר הקשר והטלפון נחזיר לחשוד בתום המעצר).\nג. מוודאים ב MDT שיש לחשוד בפרופיל תמונה עדכנית (ללא מסיכה שרואים בבירור את הפנים) + טביעת אצבע. במידה וחסר יש להשלים את הדברים ולעדכן את הפרופיל שלו.\nד. מכניסים את החשוד לתא המעצר ומורידים לו אזיקה.\nה. מתחילים למלא את ה Incident בצורה מלאה ומפורטת על פי הפורמט שנמצא ב MDT.\nו. שמים את כלל הדברים שהוחרמו לחשוד ב Evidence ומציינים את מספרו ב Incident, בנוסף יש לקחת תמונה של כלל הדברים ששמתם ב Evidence ולצרף אותה ל Incident במקום המתאים.\nז. נותנים לחשוד את הדוח שמגיע לו ושולחים אותו לכלא, למספר החודשים המומלצים ב Incident.\n⚠️ במידה ולא הוקראו זכויות לחשוד ישר אחרי האזיקה, ללא סיבה מוצדקת (כגון איום בשטח), יש להפחית 30 אחוז מעונשו.\n\n📋 נוהל פיטים:\nניתן לתת פיט לאחר כארבע דקות מתחילת מרדף, וכל דקה מהפיט הראשון אפשר לתת פיט נוסף. במידה והרכב הנרדף מבצע קפיצה או מעבר צר אתם רשאים לתת פיט. לא משנה מה הסיבה תמיד צריכים אישור של מנהל המרדף לביצוע הפיט!\nבנוסף, ספייקים כמו פיטים ניתן לשים לאחר כארבע דקות מתחילת האירוע, וכל עוד הספייק עדיין מונח על הרצפה השוטר מחויב לחכות איתו עד להרמתו בסיום השימוש בו.\nפיט נותנים עד ל135 קמ\"ש בדופן האחורי של הרכב.\n\n📋 נוהל פתיחה בירי:\nעל מנת לפתוח בירי לעבר חשוד שלושת התנאים הבאים חייבים להתקיים בו זמנית:\nאמצעי - החשוד מחזיק בכלי נשק חם או קר.\nכוונה - לחשוד יש כוונה מיידית לפגוע בכם/בשוטרים/באזרחים.\nיכולת - לחשוד יש את היכולת הפיזית לממש את הפגיעה באופן מיידי.\n\nחמישה סיטואציות שבהם יהיה מותר לנו לפתוח בירי:\n1. החשוד מכוון עליכם נשק חם או יורה עליכם.\n2. במידה ואתם במרדף רגלי והחשוד עם נשק חם שלוף, מזהירים מילולית להוריד מיד את הנשק, לאחר מכן יורים 3 יריות אזהרה לאוויר. במידה והחשוד לא מוריד את הנשק יורים לעבר פלג גוף תחתון (ברכיים ומטה).\n3. במידה וחשוד קופץ למים במהלך מרדף בכוונה תחילה ואין לו סירה יש אישור לירי על מנת לנטרל, במידה ויש סירה יש אישור לירי רק לאחר 15 דקות של מרדף ימי.\n4. במהלך מרדף רכבי, במידה ורכב מתערב ונותן לכם פיטים באופן מכוון, יש להזהיר את תחילה את הרכב ובמידה והוא עושה זאת בפעם השנייה, יש אישור ירי לכל גלגלי הרכב באישור מנהל המרדף.\n5. במידה ואתם בעצירה שגרתית ואין לידכם ניידת / אופנוע / מסוק, והרכב שנעצר פותח במרדף, יש אישור לירות לגלגלי הרכב בלבד ולדווח בקשר המשך נסיעה.";
-
-ANSWERS['מה זה dispatch?'] = "📡 תפקידי ה-Dispatch:\n1. מחלק ומעביר שוטרים לאירועים\n2. לוקח תלונות מאזרחים\n3. שומר על סדר בקשר ובתחנה\n\n🛠️ כלים: פאנל, פי-צ'אט, קשר\n📍 מיקום: בדלפק שבלובי\n\n🎬 סרטון: https://www.youtube.com/watch?v=hmc8zr416nY";
-
-ANSWERS['איך משתמשים ב-MDT?'] = "💻 MDT:\n1. ניהול אירועים\n2. כתיבת Incident\n3. בדיקת פרופילים\n\n📋 במעצר: לוודא תמונה וטביעת אצבע, למלא Incident, Evidence + תמונה\n\n🎬 סרטון: https://www.youtube.com/watch?v=ftuV7RGXVoc";
-
-ANSWERS['איך FTO צריך להתלבש?'] = "👮 לבוש FTO:\n• Tops: 778 | Texture: 11\n• Undershirt: 276 | Texture: 0\n• Arms: 0\n• Decals: 238 | Texture לפי דרגה: 8=Officer, 9=Sergeant, 10=Corporal, 11=Lieutenant\n• Neckwear: 257 | Texture: 0\n• Vests: 0 | Bags: 136\n• Pants: 274 | Texture: 3\n• Shoes: 169";
-
-ANSWERS['מה תפקידו של ה-FTO?'] = "🎖️ FTO (Field Training Officer):\n• הדרכה בשטח בזמן אמת\n• הדגמת עבודה נכונה\n• פיקוח על השוטר החדש\n• הערכת התקדמות\n• תיקון טעויות";
-
-ANSWERS['שאלות לאימון המסכם (פאנל)'] = "❓ שאלות לאימון המסכם (פאנל) — לשאול ישר אחרי הסרטון של הפאנל:\n\nשאלה | תשובה נכונה\n---------------------------------------------------------\nמה זה דיספץ'? | מחלק ומעביר שוטרים לאירועים\nאיך דיספץ' עובד? | פאנל, פי-צ'אט וקשר\nאיזה תפקידים יש לדיספץ' חוץ מלחלק לאירועים? | לקחת תלונות מאזרחים ולשים לב לסדר בקשר ובתחנה עצמה\nמה המיקום של דיספץ' בתחנה? | בדלפק שבלובי\n---------------------------------------------------------\n🔄 מבחן העברה לשוד:\nמבקשים מהקדט להעביר את אחד חברי ה-FTO לקשר של אחד השודים דרך הפאנל";
-
-ANSWERS['סרטונים לאימון המסכם'] = "🎬 סרטונים לאימון המסכם:\n\n📹 סרטון על ה-MDT:\nhttps://www.youtube.com/watch?v=ftuV7RGXVoc\n\n📹 סרטון על ה-Panel:\nhttps://youtu.be/hmc8zr416nY";
-
-ANSWERS['כמות שוטרים באירועי PATROL FTO'] = "👥 כמות שוטרים באירועי PATROL FTO:\n\n🎓 אקדמיה:\nנוהל: מנהל האקדמיה + 4 שוטרים עד 6 אזרחים, על כל 3 אזרחים נוספים עוד שוטר, עד 9 שוטרים.\nדוגמאות:\n• 10 אזרחים = מנהל האקדמיה + 5 שוטרים\n• 15 אזרחים = מנהל האקדמיה + 7 שוטרים\n\n🏋️ אימון מסכם:\nנוהל: מנהל האימון + 2 שוטרים עד 4 קאדטים, על כל קאדט נוסף עוד שוטר, עד 7 שוטרים.\nדוגמאות:\n• 6 קאדטים = מנהל האימון + 4 שוטרים\n• 10 קאדטים = מנהל האימון + 7 שוטרים";
-
-ANSWERS['פורמט FTO Report'] = "📝 פורמט FTO Report:\n\nתיוג:\nאירוע:\nתאריך:\nמנהל האירוע:\nבאישור (במקרה שהאירוע חריג):\n\n⚠️ יש לכתוב לפני כל אירוע FTO בחדר בדיסקורד הנקרא fto reports";
-
-ANSWERS['פורמט בחינה לאופיסר'] = "🗣️ (להקריא לנבחן):\nמה קורה, אני אהיה הבוחן שלך להיום.\nלפני שנתחיל תוודא שיש ברשותך 15 דקות בערך פנויות בלי הפרעות להליך הבחינה.\nבמהלך הבחינה אין שאלות, אין עצירות או הפסקות.\nכרגע אתה תעבור את הבחינה הראשונה שלך לאופיסר, במידה ולא תעבור את הבחינה תוכל להיבחן מחדש עוד 24 שעות מרגע זה.\nבמידה ולא תעבור את הבחינה השנייה תפוטר מהמשטרה ותוכל להגיע מחדש לאחר חודש.\nבמידה ואני (הבוחן) אזהה העתקות / הקראה מההנדבוק או כל רמאות שהיא, אאלץ לפסול את הבחינה ותפוטר מהמשטרה.\nיש לך שאלות לפני שנתחיל? (חובה לשאול את הנבחן!)\n\n📋 פורמט בחינה לאופיסר:\nבחינה מספר: 0/2\nבוחן:\nנבחן:\nאינסידנט\nפאנל\n-----------------------------\nנוהל פתיחה בירי:\n• אכ\"י\n• רגלי\n• מים\n• פיטים\n• אין אופציה להמשיך מרדף\n• אם בן אדם מכוון או יורה\n-----------------------------\nנוהל עלייה למשמרת\nנוהל ירידה ממשמרת\nנוהל 10-6\nנוהל חדר תדריכים\nנוהל עצירה שגרתית\nנוהל מרדף רגלי\nנוהל ביפים\nנוהל מעצר חשוד\nנוהל פיטים\n-----------------------------\nנדב\"ר:\n• דיווח על פתיחה ב-10-80\n• דיווח על פתיחה ב-10-70\n• תוצאה:\n\n⚠️ יש לכתוב תוך כדי הבחינה\nבמקרה והוא טעה או לא אמר חלק מהדברים — יש לכתוב במה הוא טעה ומה לא ידע\n\n📤 לשלוח בסוף בחדר בדיסקורד הנקרא Cadet test";
-
-ANSWERS['איך צריכה להיות ההתנהלות באירועים?'] = "🚨 FTO באירועים:\n• שליטה באירוע — מוביל ושומר על סדר\n• הדרכה תוך כדי — מסביר בזמן אמת\n• מתן מקום לשוטר — מתערב רק אם יש טעות\n• לוקח שוטרים חדשים לפטרולים";
-
-var quickQuestions = {
-  'Cadet': [
-    {q:'מה הם הנהלים?',icon:'📋'},
-    {q:'מה זה dispatch?',icon:'📡'},
-    {q:'איך משתמשים ב-MDT?',icon:'💻'}
-  ],
-  'FTO Unit': [
-    {q:'איך FTO צריך להתלבש?',icon:'👮'},
-    {q:'מה תפקידו של ה-FTO?',icon:'🎖️'},
-    {q:'איך צריכה להיות ההתנהלות באירועים?',icon:'🚨'},
-    {q:'פורמט FTO Report',icon:'📝'},
-    {q:'פורמט בחינה לאופיסר',icon:'📋'},
-    {q:'כמות שוטרים באירועי PATROL FTO',icon:'👥'},
-    {q:'סרטונים לאימון המסכם',icon:'🎬'},
-    {q:'שאלות לאימון המסכם (פאנל)',icon:'❓'}
-  ],
-  'Command': [],
-  'Motorcycle Unit': [],
-  'K9 Unit': []
-};
-
-// ── PIN ────────────────────────────────────────────────────────────────────────
-function selectRank(rank) {
-  if (PINS[rank]) {
-    pendingRank = rank;
-    document.getElementById('pin-title').textContent = 'קוד גישה — ' + rank;
-    document.getElementById('pin-input').value = '';
-    document.getElementById('pin-error').textContent = '';
-    document.getElementById('pin-input').classList.remove('error');
-    document.getElementById('pin-overlay').classList.add('active');
-    setTimeout(function(){ document.getElementById('pin-input').focus(); }, 100);
-  } else {
-    enterRank(rank);
-  }
-}
-
-function submitPin() {
-  var entered = document.getElementById('pin-input').value.trim();
-  if (entered === PINS[pendingRank]) {
-    document.getElementById('pin-overlay').classList.remove('active');
-    enterRank(pendingRank);
-    pendingRank = null;
-  } else {
-    document.getElementById('pin-error').textContent = 'קוד שגוי — אם אינך יודע את הקוד, פנה אל ג\'וני כהן';
-    var inp = document.getElementById('pin-input');
-    inp.classList.add('error');
-    inp.value = '';
-    setTimeout(function(){ inp.classList.remove('error'); }, 400);
-  }
-}
-
-function cancelPin() {
-  document.getElementById('pin-overlay').classList.remove('active');
-  pendingRank = null;
-}
-
-// ── RANK ENTER ────────────────────────────────────────────────────────────────
-function enterRank(rank) {
-  currentRank = rank;
-  document.getElementById('badge-rank-name').textContent = rank;
-  document.getElementById('rank-badge').classList.add('visible');
-  document.getElementById('rank-screen').classList.remove('active');
-
-  if (rank === 'FTO Unit') {
-    document.getElementById('fto-select-screen').classList.add('active');
-    return;
-  }
-
-  if (rank === 'Command') {
-    document.getElementById('main-roster-section').style.display = 'block';
-    document.getElementById('roster-screen').classList.add('active');
-    loadRoster();
-    loadCadetRoster();
-    return;
-  }
-
-  var container = document.getElementById('quick-questions');
-  container.innerHTML = '';
-  var qs = quickQuestions[rank] || [];
-  if (qs.length === 0) {
-    container.innerHTML = '<p style="font-size:0.8rem;color:var(--text-muted);text-align:center;padding:16px 8px;line-height:1.6;">🏍️<br>תוכן היחידה<br>יתווסף בקרוב</p>';
-  }
-  qs.forEach(function(item) {
-    var btn = document.createElement('button');
-    btn.className = 'quick-btn';
-    btn.innerHTML = "<em class='q-icon'>" + item.icon + "</em>" + item.q;
-    btn.onclick = (function(q){ return function(){ askQuestion(q); }; })(item.q);
-    container.appendChild(btn);
-  });
-
-  var msgs = document.getElementById('chat-messages');
-  msgs.innerHTML = '';
-  document.getElementById('chat-screen').classList.add('active');
-  setTimeout(function() {
-    addMessage('assistant', "ברוך הבא, " + rank + "! בחר שאלה מהרשימה מצד ימין.");
-  }, 300);
-}
-
-function enterFtoUnit() {
-  document.getElementById('fto-select-screen').classList.remove('active');
-  // Load FTO chat
-  var container = document.getElementById('quick-questions');
-  container.innerHTML = '';
-  var qs = quickQuestions['FTO Unit'] || [];
-  qs.forEach(function(item) {
-    var btn = document.createElement('button');
-    btn.className = 'quick-btn';
-    btn.innerHTML = "<em class='q-icon'>" + item.icon + "</em>" + item.q;
-    btn.onclick = (function(q){ return function(){ askQuestion(q); }; })(item.q);
-    container.appendChild(btn);
-  });
-  var msgs = document.getElementById('chat-messages');
-  msgs.innerHTML = '';
-  document.getElementById('chat-screen').classList.add('active');
-  setTimeout(function() {
-    addMessage('assistant', "ברוך הבא, FTO Unit! בחר שאלה מהרשימה מצד ימין.");
-  }, 300);
-}
-
-function enterFtoCadetRoster() {
-  document.getElementById('fto-select-screen').classList.remove('active');
-  document.getElementById('main-roster-section').style.display = 'none';
-  document.getElementById('roster-screen').classList.add('active');
-  loadCadetRoster();
-}
-
-function changeRank() {
-  document.getElementById('chat-screen').classList.remove('active');
-  document.getElementById('roster-screen').classList.remove('active');
-  document.getElementById('fto-select-screen').classList.remove('active');
-  document.getElementById('main-roster-section').style.display = 'block';
-  document.getElementById('rank-screen').classList.add('active');
-  document.getElementById('rank-badge').classList.remove('visible');
-  currentRank = null;
-}
-
-// ── CHAT ──────────────────────────────────────────────────────────────────────
-function askQuestion(q) {
-  addMessage('user', q);
-  var answer = ANSWERS[q] || 'אין תשובה זמינה.';
-  setTimeout(function() { addMessage('assistant', answer); }, 300);
-}
-
-function addMessage(role, text) {
-  var container = document.getElementById('chat-messages');
-  var wc = container.querySelector('.welcome-card');
-  if (wc) wc.remove();
-  var msg = document.createElement('div');
-  msg.className = 'message ' + role;
-  var avatar = document.createElement('div');
-  avatar.className = 'msg-avatar';
-  avatar.textContent = role === 'user' ? '👤' : '🛡️';
-  var bubble = document.createElement('div');
-  bubble.className = 'msg-bubble';
-  var lines = text.split('\n');
-  var html = '';
-  lines.forEach(function(line) {
-    var urlMatch = line.match(/(https?:\/\/[^\s]+)/);
-    if (urlMatch) {
-      var url = urlMatch[1];
-      var safeUrl = url.replace(/"/g, '&quot;');
-      var label = url.indexOf('youtube') !== -1 || url.indexOf('youtu.be') !== -1 ? '🎬 צפה בסרטון' : '🔗 פתח קישור';
-      html += '<br><a href="' + safeUrl + '" target="_blank" rel="noopener" class="link-btn" style="text-decoration:none;">' + label + '</a><br>';
-    } else {
-      html += (html ? '<br>' : '') + line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
-  });
-  bubble.innerHTML = html;
-  msg.appendChild(avatar); msg.appendChild(bubble);
-  container.appendChild(msg);
-  container.scrollTop = container.scrollHeight;
-}
-
-function copyLink(btn, url) {
-  var done = function() { btn.classList.add('show-tip'); setTimeout(function(){ btn.classList.remove('show-tip'); }, 4000); };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(url).then(done).catch(function(){
-      var ta = document.createElement('textarea'); ta.value = url; ta.style.cssText = 'position:fixed;opacity:0;';
-      document.body.appendChild(ta); ta.focus(); ta.select(); try { document.execCommand('copy'); } catch(e){}
-      document.body.removeChild(ta); done();
-    });
-  } else {
-    var ta = document.createElement('textarea'); ta.value = url; ta.style.cssText = 'position:fixed;opacity:0;';
-    document.body.appendChild(ta); ta.focus(); ta.select(); try { document.execCommand('copy'); } catch(e){}
-    document.body.removeChild(ta); done();
-  }
-}
-
-// ── SOUND ─────────────────────────────────────────────────────────────────────
-function playClickSound() {
-  try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var t = ctx.currentTime;
-    var buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.008), ctx.sampleRate);
-    var d = buf.getChannelData(0);
-    for (var i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.exp(-i/(ctx.sampleRate*0.001));
-    var src = ctx.createBufferSource(); src.buffer = buf;
-    var g = ctx.createGain(); g.gain.setValueAtTime(0.35, t); g.gain.exponentialRampToValueAtTime(0.001, t+0.008);
-    src.connect(g); g.connect(ctx.destination); src.start(t);
-  } catch(e) {}
-}
-
-// ── MOUSE GLOW ────────────────────────────────────────────────────────────────
-(function() {
-  var canvas = document.getElementById('glow-canvas');
-  if (!canvas) return;
-  var ctx2d = canvas.getContext('2d');
-  var mx=-500,my=-500,tx=-500,ty=-500;
-  function resize(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
-  resize(); window.addEventListener('resize',resize);
-  document.addEventListener('mousemove',function(e){ tx=e.clientX; ty=e.clientY; mx=e.clientX; my=e.clientY; });
-  function draw(){
-    mx+=(tx-mx)*0.95; my+=(ty-my)*0.95;
-    ctx2d.clearRect(0,0,canvas.width,canvas.height);
-    var gr=ctx2d.createRadialGradient(mx,my,0,mx,my,120);
-    gr.addColorStop(0,'rgba(220,230,255,0.18)');
-    gr.addColorStop(0.4,'rgba(165,148,249,0.07)');
-    gr.addColorStop(1,'rgba(0,0,0,0)');
-    ctx2d.fillStyle=gr; ctx2d.fillRect(0,0,canvas.width,canvas.height);
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-
-// ── RANK CARD ANIMATIONS ──────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.rank-card').forEach(function(card) {
-    card.addEventListener('mouseenter', function() {
-      var icon = card.querySelector('.rank-icon');
-      if (icon) icon.style.transform = 'scale(1.25) rotate(-5deg)';
-    });
-    card.addEventListener('mouseleave', function() {
-      var icon = card.querySelector('.rank-icon');
-      if (icon) icon.style.transform = 'scale(1) rotate(0deg)';
-    });
-    card.addEventListener('mousedown', playClickSound);
-  });
-});
-
 // ── FIREBASE ──────────────────────────────────────────────────────────────────
 var firebaseConfig = {
   apiKey: "AIzaSyAMOihHnXa-j9X8dVSqRoREUauVd6Hh8TA",
@@ -1062,371 +339,333 @@ var firebaseConfig = {
   appId: "1:364977141598:web:861a4ff22fe8e6b28681cf"
 };
 firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
 var db = firebase.firestore();
-var editingId = null;
-var allOfficers = [];
-var activeFilters = {};
 
-function calcAvg(d) {
-  var vals = [];
-  if (d.ratingsTrain && d.ratingsTrain.length) vals.push(d.ratingsTrain.reduce(function(a,b){return a+b;},0)/d.ratingsTrain.length);
-  if (d.ratingsAcad  && d.ratingsAcad.length)  vals.push(d.ratingsAcad.reduce(function(a,b){return a+b;},0)/d.ratingsAcad.length);
-  if (d.ratingsExam  && d.ratingsExam.length)   vals.push(d.ratingsExam.reduce(function(a,b){return a+b;},0)/d.ratingsExam.length);
-  if (!vals.length) return null;
-  return (vals.reduce(function(a,b){return a+b;},0)/vals.length).toFixed(1);
+// ── PORTALS ────────────────────────────────────────────────────────────────────
+var BASE = 'https://harelmamaliak-dot.github.io/lspd-website/';
+var PORTALS = {
+  cadet: [
+    { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' }
+  ],
+  officer: [
+    { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' }
+  ],
+  fto: [
+    { id:'prrp-pd', icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
+    { id:'fto-exam', icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
+    { id:'fto-eval', icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' }
+  ],
+  command: [
+    { id:'prrp-pd', icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
+    { id:'fto-exam', icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
+    { id:'fto-eval', icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' },
+    { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' },
+    { id:'tracker', icon:'⏱️', name:'מחשבון מערכת שעות', desc:'lspd_tracker', color:'#38bdf8', glow:'rgba(56,189,248,0.2)', file:'lspd_tracker_v4_0.html' },
+    { id:'boss', icon:'🔧', name:'Boss Menu', desc:'ניהול המערכת', color:'#e2b96f', glow:'rgba(226,185,111,0.2)', file:null }
+  ],
+  high_command: [
+    { id:'prrp-pd', icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
+    { id:'fto-exam', icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
+    { id:'fto-eval', icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' },
+    { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' },
+    { id:'tracker', icon:'⏱️', name:'מחשבון מערכת שעות', desc:'lspd_tracker', color:'#38bdf8', glow:'rgba(56,189,248,0.2)', file:'lspd_tracker_v4_0.html' },
+    { id:'boss', icon:'🔧', name:'Boss Menu', desc:'ניהול המערכת', color:'#e2b96f', glow:'rgba(226,185,111,0.2)', file:null }
+  ]
+};
+
+var ROLE_LABELS = { cadet:'קאדט', officer:'שוטר', fto:'FTO', command:'פיקוד', high_command:'פיקוד גבוה' };
+var ADMIN_EMAIL = 'harelmamaliak@gmail.com';
+var currentUser = null;
+var currentUserData = null;
+
+// ── AUTH ────────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(function(t,i){ t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')); });
+  document.getElementById('login-form').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('register-form').style.display = tab==='register' ? 'block' : 'none';
+  document.getElementById('auth-error').style.display = 'none';
 }
 
-function clampRating(input) {
-  var v = parseFloat(input.value);
-  if (!isNaN(v)) {
-    if (v > 10) input.value = 10;
-    if (v < 1) input.value = 1;
-  }
+function showAuthError(msg) {
+  var el = document.getElementById('auth-error');
+  el.textContent = msg; el.style.display = 'block';
 }
 
-function resetFtoRatings() {
-  if (!editingId) return;
-  if (!confirm('לאפס את כל היסטוריית הדירוג של השוטר?')) return;
-  db.collection('officers').doc(editingId).update({
-    ratingsTrain: [],
-    ratingsAcad: [],
-    ratingsExam: []
-  }).then(function() {
-    document.getElementById('r-train').value = '';
-    document.getElementById('r-acad').value = '';
-    document.getElementById('r-exam').value = '';
-    document.getElementById('r-train').placeholder = '1-10';
-    document.getElementById('r-acad').placeholder = '1-10';
-    document.getElementById('r-exam').placeholder = '1-10';
-    document.getElementById('r-avg').textContent = '—';
-    // Update local data
-    var o = allOfficers.find(function(o){return o.id===editingId;});
-    if (o) { o.data.ratingsTrain=[]; o.data.ratingsAcad=[]; o.data.ratingsExam=[]; }
-    alert('הדירוג אופס בהצלחה!');
-  }).catch(function(err){ alert('שגיאה: ' + err.message); });
+function doLogin() {
+  var username = document.getElementById('l-username').value.trim();
+  var password = document.getElementById('l-password').value;
+  if (!username || !password) { showAuthError('נא למלא את כל השדות'); return; }
+  // Find user by username
+  db.collection('users').where('username','==',username).get().then(function(snap) {
+    if (snap.empty) { showAuthError('שם משתמש לא קיים'); return; }
+    var userData = snap.docs[0].data();
+    auth.signInWithEmailAndPassword(userData.email, password)
+      .catch(function(e) { showAuthError('סיסמה שגויה'); });
+  }).catch(function() { showAuthError('שגיאה בכניסה'); });
 }
 
-function updateAvg() {
-  var vals = [parseFloat(document.getElementById('r-train').value),parseFloat(document.getElementById('r-acad').value),parseFloat(document.getElementById('r-exam').value)].filter(function(v){return !isNaN(v);});
-  document.getElementById('r-avg').textContent = vals.length ? (vals.reduce(function(a,b){return a+b;},0)/vals.length).toFixed(1) : '—';
-}
-
-function loadRoster() {
-  db.collection('officers').onSnapshot(function(snapshot) {
-    allOfficers = [];
-    snapshot.forEach(function(doc) { allOfficers.push({id:doc.id,data:doc.data()}); });
-    allOfficers.sort(function(a,b){return (a.data.badge||'').localeCompare(b.data.badge||'');});
-    applyFilters();
-  }, function(err) {
-    var tbody = document.getElementById('roster-body');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="11" class="roster-empty">שגיאה: ' + err.message + '</td></tr>';
-  });
-}
-
-function applyFilters() {
-  var search = (document.getElementById('roster-search')||{value:''}).value.toLowerCase();
-  var filRank = (document.getElementById('fil-rank')||{value:''}).value;
-  var filUnit = (document.getElementById('fil-unit')||{value:''}).value;
-  var filPerm = (document.getElementById('fil-perm')||{value:''}).value;
-  var filtered = allOfficers.filter(function(o) {
-    var d = o.data;
-    if (search && !(d.name||'').toLowerCase().includes(search)) return false;
-    if (filRank && d.rank !== filRank) return false;
-    if (filUnit==='fto'&&!d.unitFto) return false;
-    if (filUnit==='moto'&&!d.unitMoto) return false;
-    if (filUnit==='k9'&&!d.unitK9) return false;
-    var pm={mace:'permMace',shotgun:'permShotgun',sniper:'permSniper',moto:'permMoto',heli:'permHeli',tac:'permTac',inter:'permInter',dog:'permDog'};
-    if (filPerm&&!d[pm[filPerm]]) return false;
-    if (activeFilters.leave&&!d.wantsLeave) return false;
-    if (activeFilters.interview&&!d.interviewDay) return false;
-    if (activeFilters.ftoInterest&&d.ftoInterest!=='כן') return false;
-    return true;
-  });
-  renderRoster(filtered);
-}
-
-function toggleFilter(elId,key) {
-  activeFilters[key]=!activeFilters[key];
-  var el=document.getElementById(elId); if(el) el.classList.toggle('on',!!activeFilters[key]);
-  applyFilters();
-}
-
-function clearFilters() {
-  activeFilters={};
-  document.getElementById('fil-rank').value='';
-  document.getElementById('fil-unit').value='';
-  document.getElementById('fil-perm').value='';
-  document.getElementById('roster-search').value='';
-  ['fil-leave','fil-interview','fil-fto-interest'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('on');});
-  applyFilters();
-}
-
-function renderRoster(officers) {
-  var tbody=document.getElementById('roster-body');
-  if(!tbody) return;
-  if(!officers.length){ tbody.innerHTML='<tr><td colspan="11" class="roster-empty">אין שוטרים מתאימים</td></tr>'; return; }
-  var PERMS=[{key:'permMace',label:'מרסס'},{key:'permShotgun',label:'שוטגאן'},{key:'permSniper',label:'סנייפר'},{key:'permMoto',label:'אופנוע'},{key:'permHeli',label:'מסוק'},{key:'permTac',label:'טקטי'},{key:'permInter',label:'אינטרספטור'},{key:'permDog',label:'כלב'}];
-  var html='';
-  officers.forEach(function(o) {
-    var d=o.data; var id=o.id;
-    var units=[]; if(d.unitFto)units.push('FTO'); if(d.unitMoto)units.push('אופנועים'); if(d.unitK9)units.push('K9');
-    var unitsHtml=units.map(function(u){return '<span class="unit-tag">'+u+'</span>';}).join('')||'—';
-    var permsHtml=PERMS.filter(function(p){return d[p.key];}).map(function(p){return '<span class="perm-badge perm-yes">'+p.label+'</span>';}).join('')||'<span style="color:var(--text-muted);font-size:0.72rem;">אין</span>';
-    var avg=calcAvg(d); var avgHtml=avg?'<span class="rating-val">'+avg+'</span>':'—';
-    var ftoInterest=d.unitFto?'':(d.ftoInterest?'<span style="font-size:0.75rem;color:var(--text-secondary);">'+d.ftoInterest+'</span>':'—');
-    var safeId=id.replace(/"/g,'&quot;');
-    html+='<tr><td><strong>'+(d.name||'')+'</strong></td><td>'+(d.badge||'')+'</td><td>'+(d.rank||'')+'</td><td>'+unitsHtml+'</td><td>'+(d.wantsLeave?'<span class="flag-yes">⚠️ כן</span>':'—')+'</td><td>'+(d.interviewDay?'<span class="flag-yes">📋 '+d.interviewDay+'</span>':'—')+'</td><td>'+ftoInterest+'</td><td style="max-width:180px;">'+permsHtml+'</td><td>'+avgHtml+'</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(d.notes||'').replace(/"/g,'&quot;')+'">'+(d.notes||'—')+'</td><td><button class="roster-action-btn" onclick="openEditModal(&quot;'+safeId+'&quot;)">✏️</button><button class="roster-action-btn" onclick="deleteOfficer(&quot;'+safeId+'&quot;)">🗑️</button></td></tr>';
-  });
-  tbody.innerHTML=html;
-}
-
-function openModal() {
-  editingId=null;
-  document.getElementById('modal-title').textContent='הוסף שוטר';
-  ['f-name','f-badge','f-notes'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('f-rank').value='Cadet';
-  document.getElementById('f-interview').value='';
-  document.getElementById('f-leave').checked=false;
-  document.getElementById('f-unit-fto').checked=false;
-  document.getElementById('f-unit-moto').checked=false;
-  document.getElementById('f-unit-k9').checked=false;
-  document.getElementById('f-fto-interest').value='';
-  ['p-mace','p-shotgun','p-sniper','p-moto','p-heli','p-tac','p-inter','p-dog'].forEach(function(id){document.getElementById(id).checked=false;});
-  ['r-train','r-acad','r-exam'].forEach(function(id){document.getElementById(id).value=''; document.getElementById(id).placeholder='1-10';});
-  document.getElementById('r-avg').textContent='—';
-  updateFtoVisibility();
-  document.getElementById('roster-modal').classList.add('active');
-  setTimeout(function(){document.getElementById('f-name').focus();},100);
-}
-
-function openEditModal(id) {
-  db.collection('officers').doc(id).get().then(function(doc) {
-    if(!doc.exists) return;
-    var d=doc.data(); editingId=id;
-    document.getElementById('modal-title').textContent='ערוך שוטר — '+(d.name||'');
-    document.getElementById('f-name').value=d.name||'';
-    document.getElementById('f-badge').value=d.badge||'';
-    document.getElementById('f-rank').value=d.rank||'Cadet';
-    document.getElementById('f-interview').value=d.interviewDay||'';
-    document.getElementById('f-leave').checked=!!d.wantsLeave;
-    document.getElementById('f-unit-fto').checked=!!d.unitFto;
-    document.getElementById('f-unit-moto').checked=!!d.unitMoto;
-    document.getElementById('f-unit-k9').checked=!!d.unitK9;
-    document.getElementById('f-fto-interest').value=d.ftoInterest||'';
-    document.getElementById('f-notes').value=d.notes||'';
-    ['mace','shotgun','sniper','moto','heli','tac','inter','dog'].forEach(function(k){
-      document.getElementById('p-'+k).checked=!!d['perm'+k.charAt(0).toUpperCase()+k.slice(1)];
+function doRegister() {
+  var name = document.getElementById('r-name').value.trim();
+  var username = document.getElementById('r-username').value.trim();
+  var role = document.getElementById('r-role').value;
+  var password = document.getElementById('r-password').value;
+  if (!name||!username||!password) { showAuthError('נא למלא את כל השדות'); return; }
+  if (password.length < 6) { showAuthError('סיסמה חייבת להיות לפחות 6 תווים'); return; }
+  var needsApproval = (role==='command'||role==='high_command');
+  // Use username+random as fake email for Firebase Auth
+  var fakeEmail = username.toLowerCase().replace(/[^a-z0-9]/g,'') + '_' + Date.now() + '@lspd.local';
+  auth.createUserWithEmailAndPassword(fakeEmail, password).then(function(cred) {
+    return db.collection('users').doc(cred.user.uid).set({
+      uid: cred.user.uid, name: name, username: username,
+      email: fakeEmail, role: role,
+      status: needsApproval ? 'pending' : 'active',
+      isAdmin: false, createdAt: new Date().toISOString()
     });
-    var aT=d.ratingsTrain&&d.ratingsTrain.length?(d.ratingsTrain.reduce(function(a,b){return a+b;},0)/d.ratingsTrain.length).toFixed(1):'';
-    var aA=d.ratingsAcad&&d.ratingsAcad.length?(d.ratingsAcad.reduce(function(a,b){return a+b;},0)/d.ratingsAcad.length).toFixed(1):'';
-    var aE=d.ratingsExam&&d.ratingsExam.length?(d.ratingsExam.reduce(function(a,b){return a+b;},0)/d.ratingsExam.length).toFixed(1):'';
-    document.getElementById('r-train').placeholder=aT?'ממוצע: '+aT:'1-10';
-    document.getElementById('r-acad').placeholder=aA?'ממוצע: '+aA:'1-10';
-    document.getElementById('r-exam').placeholder=aE?'ממוצע: '+aE:'1-10';
-    ['r-train','r-acad','r-exam'].forEach(function(id){document.getElementById(id).value='';});
-    document.getElementById('r-avg').textContent=calcAvg(d)||'—';
-    updateFtoVisibility();
-    document.getElementById('roster-modal').classList.add('active');
+  }).then(function() {
+    if (needsApproval) {
+      document.getElementById('pending-note').style.display = 'block';
+      showAuthError('');
+    }
+  }).catch(function(e) {
+    showAuthError(e.code === 'auth/email-already-in-use' ? 'שם משתמש תפוס' : 'שגיאה בהרשמה: ' + e.message);
   });
 }
 
-function updateFtoVisibility() {
-  var isFto=document.getElementById('f-unit-fto').checked;
-  document.getElementById('fto-interest-wrap').style.display=isFto?'none':'block';
-  document.getElementById('fto-ratings-wrap').style.display=isFto?'block':'none';
+function doLogout() {
+  auth.signOut();
 }
 
-function closeModal() { document.getElementById('roster-modal').classList.remove('active'); editingId=null; }
-
-function saveOfficer() {
-  var name=document.getElementById('f-name').value.trim();
-  var badge=document.getElementById('f-badge').value.trim();
-  if(!name||!badge){alert('שם ותג הם שדות חובה');return;}
-  var isMoto=document.getElementById('f-unit-moto').checked;
-  var isFto=document.getElementById('f-unit-fto').checked;
-  var data={
-    name:name,badge:badge,rank:document.getElementById('f-rank').value,
-    interviewDay:document.getElementById('f-interview').value,
-    wantsLeave:document.getElementById('f-leave').checked,
-    unitFto:isFto,unitMoto:isMoto,unitK9:document.getElementById('f-unit-k9').checked,
-    ftoInterest:isFto?'':document.getElementById('f-fto-interest').value,
-    permMace:document.getElementById('p-mace').checked,
-    permShotgun:document.getElementById('p-shotgun').checked,
-    permSniper:document.getElementById('p-sniper').checked,
-    permMoto:isMoto?true:document.getElementById('p-moto').checked,
-    permHeli:document.getElementById('p-heli').checked,
-    permTac:document.getElementById('p-tac').checked,
-    permInter:document.getElementById('p-inter').checked,
-    permDog:document.getElementById('p-dog').checked,
-    notes:document.getElementById('f-notes').value.trim()
-  };
-  var rT=parseFloat(document.getElementById('r-train').value);
-  var rA=parseFloat(document.getElementById('r-acad').value);
-  var rE=parseFloat(document.getElementById('r-exam').value);
-  var promise;
-  if(editingId){
-    var ex=(allOfficers.find(function(o){return o.id===editingId;})||{data:{}}).data;
-    data.ratingsTrain=isNaN(rT)?(ex.ratingsTrain||[]):(ex.ratingsTrain||[]).concat([rT]);
-    data.ratingsAcad=isNaN(rA)?(ex.ratingsAcad||[]):(ex.ratingsAcad||[]).concat([rA]);
-    data.ratingsExam=isNaN(rE)?(ex.ratingsExam||[]):(ex.ratingsExam||[]).concat([rE]);
-    promise=db.collection('officers').doc(editingId).set(data);
-  }else{
-    data.ratingsTrain=isNaN(rT)?[]:[rT];
-    data.ratingsAcad=isNaN(rA)?[]:[rA];
-    data.ratingsExam=isNaN(rE)?[]:[rE];
-    promise=db.collection('officers').add(data);
+// ── AUTH STATE ─────────────────────────────────────────────────────────────────
+// Initialize admin user if needed
+var ADMIN_UID = 'B2M3CCM2uObzph1SvN4z0nRJx6r2';
+db.collection('users').doc(ADMIN_UID).get().then(function(doc) {
+  if (!doc.exists) {
+    db.collection('users').doc(ADMIN_UID).set({
+      uid: ADMIN_UID,
+      name: 'Admin',
+      username: 'admin',
+      email: 'admin@lspd.local',
+      role: 'high_command',
+      status: 'active',
+      isAdmin: true,
+      createdAt: new Date().toISOString()
+    });
   }
-  promise.then(closeModal).catch(function(err){alert('שגיאה: '+err.message);});
-}
+}).catch(function(){});
 
-function deleteOfficer(id) { if(!confirm('למחוק את השוטר?'))return; db.collection('officers').doc(id).delete(); }
-
-
-// ── CADET ROSTER ──────────────────────────────────────────────────────────────
-var allCadets = [];
-var activeCadetFilters = {};
-var editingCadetId = null;
-
-function loadCadetRoster() {
-  db.collection('cadets').onSnapshot(function(snapshot) {
-    allCadets = [];
-    snapshot.forEach(function(doc) { allCadets.push({id:doc.id, data:doc.data()}); });
-    allCadets.sort(function(a,b){ return (a.data.badge||'').localeCompare(b.data.badge||''); });
-    applyCadetFilters();
-  }, function(err) {
-    var tbody = document.getElementById('cadet-roster-body');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="roster-empty">שגיאה: ' + err.message + '</td></tr>';
-  });
-}
-
-function applyCadetFilters() {
-  var search = (document.getElementById('cadet-search')||{value:''}).value.toLowerCase();
-  var filRank = (document.getElementById('cfil-rank')||{value:''}).value;
-  var filtered = allCadets.filter(function(o) {
-    var d = o.data;
-    if (search && !(d.name||'').toLowerCase().includes(search)) return false;
-    if (filRank && d.rank !== filRank) return false;
-    if (activeCadetFilters.training && !d.completedTraining) return false;
-    if (activeCadetFilters.leave && !d.wantsLeave) return false;
-    if (activeCadetFilters.interview && !d.interviewDay) return false;
-    return true;
-  });
-  renderCadetRoster(filtered);
-}
-
-function toggleCadetFilter(elId, key) {
-  activeCadetFilters[key] = !activeCadetFilters[key];
-  var el = document.getElementById(elId); if(el) el.classList.toggle('on', !!activeCadetFilters[key]);
-  applyCadetFilters();
-}
-
-function clearCadetFilters() {
-  activeCadetFilters = {};
-  document.getElementById('cfil-rank').value = '';
-  document.getElementById('cadet-search').value = '';
-  ['cfil-training','cfil-leave','cfil-interview'].forEach(function(id){
-    var el=document.getElementById(id); if(el) el.classList.remove('on');
-  });
-  applyCadetFilters();
-}
-
-function renderCadetRoster(cadets) {
-  var tbody = document.getElementById('cadet-roster-body');
-  if (!tbody) return;
-  if (!cadets.length) { tbody.innerHTML = '<tr><td colspan="9" class="roster-empty">אין קדטים מתאימים</td></tr>'; return; }
-  var html = '';
-  cadets.forEach(function(o) {
-    var d = o.data; var id = o.id;
-    var safeId = id.replace(/"/g,'&quot;');
-    var trainingHtml = d.completedTraining ? '<span class="perm-badge perm-yes">עבר ✓</span>' : '<span class="perm-badge perm-no">לא עבר</span>';
-    var examsHtml = '<span style="font-family:Rajdhani,sans-serif;font-size:1rem;color:var(--gold-light);">' + (d.examCount||0) + '/2</span>';
-    html += '<tr>'
-      + '<td><strong>'+(d.name||'')+'</strong></td>'
-      + '<td>'+(d.badge||'')+'</td>'
-      + '<td>'+(d.rank||'')+'</td>'
-      + '<td>'+trainingHtml+'</td>'
-      + '<td>'+examsHtml+'</td>'
-      + '<td>'+(d.wantsLeave?'<span class="flag-yes">⚠️ כן</span>':'—')+'</td>'
-      + '<td>'+(d.interviewDay?'<span class="flag-yes">📋 '+d.interviewDay+'</span>':'—')+'</td>'
-      + '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(d.notes||'').replace(/"/g,'&quot;')+'">'+(d.notes||'—')+'</td>'
-      + '<td><button class="roster-action-btn" onclick="openEditCadetModal(&quot;'+safeId+'&quot;)">✏️</button>'
-      + '<button class="roster-action-btn" onclick="deleteCadet(&quot;'+safeId+'&quot;)">🗑️</button></td>'
-      + '</tr>';
-  });
-  tbody.innerHTML = html;
-}
-
-function openCadetModal() {
-  editingCadetId = null;
-  document.getElementById('cadet-modal-title').textContent = 'הוסף קדט';
-  ['cf-name','cf-badge','cf-notes'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('cf-rank').value = 'Cadet';
-  document.getElementById('cf-interview').value = '';
-  document.getElementById('cf-leave').checked = false;
-  document.getElementById('cf-training').checked = false;
-  document.getElementById('cf-exams').value = '0';
-  document.getElementById('cadet-modal').classList.add('active');
-  setTimeout(function(){document.getElementById('cf-name').focus();}, 100);
-}
-
-function openEditCadetModal(id) {
-  db.collection('cadets').doc(id).get().then(function(doc) {
-    if (!doc.exists) return;
-    var d = doc.data(); editingCadetId = id;
-    document.getElementById('cadet-modal-title').textContent = 'ערוך קדט — ' + (d.name||'');
-    document.getElementById('cf-name').value = d.name||'';
-    document.getElementById('cf-badge').value = d.badge||'';
-    document.getElementById('cf-rank').value = d.rank||'Cadet';
-    document.getElementById('cf-interview').value = d.interviewDay||'';
-    document.getElementById('cf-leave').checked = !!d.wantsLeave;
-    document.getElementById('cf-training').checked = !!d.completedTraining;
-    document.getElementById('cf-exams').value = String(d.examCount||0);
-    document.getElementById('cf-notes').value = d.notes||'';
-    document.getElementById('cadet-modal').classList.add('active');
-  });
-}
-
-function closeCadetModal() {
-  document.getElementById('cadet-modal').classList.remove('active');
-  editingCadetId = null;
-}
-
-function saveCadet() {
-  var name = document.getElementById('cf-name').value.trim();
-  var badge = document.getElementById('cf-badge').value.trim();
-  if (!name || !badge) { alert('שם ותג הם שדות חובה'); return; }
-  var data = {
-    name: name, badge: badge,
-    rank: document.getElementById('cf-rank').value,
-    interviewDay: document.getElementById('cf-interview').value,
-    wantsLeave: document.getElementById('cf-leave').checked,
-    completedTraining: document.getElementById('cf-training').checked,
-    examCount: parseInt(document.getElementById('cf-exams').value)||0,
-    notes: document.getElementById('cf-notes').value.trim()
-  };
-  var promise = editingCadetId
-    ? db.collection('cadets').doc(editingCadetId).set(data)
-    : db.collection('cadets').add(data);
-  promise.then(closeCadetModal).catch(function(err){ alert('שגיאה: ' + err.message); });
-}
-
-function deleteCadet(id) {
-  if (!confirm('למחוק את הקדט?')) return;
-  db.collection('cadets').doc(id).delete();
-}
-document.addEventListener('keydown',function(e){ if(e.key==='Escape'){closeModal();cancelPin();} });
-</script>
-
-<button class="credit-btn" onclick="toggleCredit()">קרדיט: Alejandro Jesus</button>
-<div class="credit-popup" id="credit-popup">לא באמת... Johnny Cohen המלך 👑</div>
-<script>
-function toggleCredit() {
-  var p = document.getElementById('credit-popup');
-  p.classList.toggle('show');
-  if (p.classList.contains('show')) {
-    setTimeout(function(){ p.classList.remove('show'); }, 3000);
+auth.onAuthStateChanged(function(user) {
+  if (user) {
+    currentUser = user;
+    db.collection('users').doc(user.uid).get().then(function(doc) {
+      if (!doc.exists) { auth.signOut(); return; }
+      currentUserData = doc.data();
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      document.getElementById('header-username').textContent = currentUserData.name;
+      var roleLabel = ROLE_LABELS[currentUserData.role] || currentUserData.role;
+      var roleBadge = document.getElementById('header-role-badge');
+      roleBadge.textContent = roleLabel;
+      roleBadge.className = 'header-role role-' + currentUserData.role;
+      if (currentUserData.status === 'pending') {
+        showScreen('pending-screen');
+      } else {
+        showRoleScreen();
+        if (currentUserData.role === 'fto') loadFtoSidebar();
+      }
+    });
+  } else {
+    currentUser = null; currentUserData = null;
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
   }
+});
+
+// ── SCREENS ────────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  ['pending-screen','role-screen','portal-screen','boss-screen'].forEach(function(s){
+    var el = document.getElementById(s);
+    el.style.display = 'none';
+    el.style.flexDirection = '';
+  });
+  var target = document.getElementById(id);
+  target.style.display = 'flex';
+  if (id !== 'portal-screen') target.style.flexDirection = 'column';
 }
+
+function showRoleScreen() {
+  showScreen('role-screen');
+  buildPortalCards();
+}
+
+function buildPortalCards() {
+  if (!currentUserData) return;
+  var role = currentUserData.role;
+  var portals = PORTALS[role] || [];
+  var grid = document.getElementById('portal-cards');
+  grid.innerHTML = portals.map(function(p) {
+    var onclick = 'openPortal(&quot;'+p.id+'&quot;,&quot;'+p.name+'&quot;,&quot;'+p.file+'&quot;)';
+    return '<div class="portal-card" style="--card-color:'+p.color+';--card-glow:'+p.glow+';" onclick="'+onclick+'">'+
+      '<span class="ci">'+p.icon+'</span>'+
+      '<div class="cn" style="color:'+p.color+'">'+p.name+'</div>'+
+      '<div class="cd">'+p.desc+'</div>'+
+      '</div>';
+  }).join('');
+  attachCardEffects();
+}
+
+function openPortal(id, name, file) {
+  playClick();
+  if (id === 'boss') { openBossMenu(); return; }
+  showScreen('portal-screen');
+  document.getElementById('portal-name').textContent = name;
+  document.getElementById('portal-iframe').src = BASE + file;
+}
+
+function closePortal() { showRoleScreen(); document.getElementById('portal-iframe').src = ''; }
+
+// ── FTO SIDEBAR ────────────────────────────────────────────────────────────────
+function loadFtoSidebar() {
+  if (!currentUser) return;
+  db.collection('fto_assignments').doc(currentUser.uid).onSnapshot(function(doc) {
+    var sidebar = document.getElementById('fto-sidebar');
+    var assigned = document.getElementById('cadet-assigned');
+    sidebar.style.display = 'block';
+    if (doc.exists && doc.data().cadetName) {
+      var d = doc.data();
+      assigned.innerHTML = '<span class="cadet-name">'+d.cadetName+'</span><span class="cadet-tag">תג: '+d.cadetTag+'</span>';
+    } else {
+      assigned.innerHTML = '<span class="no-cadet">לא שויך קאדט</span>';
+    }
+  });
+}
+
+// ── BOSS MENU ──────────────────────────────────────────────────────────────────
+function openBossMenu() {
+  showScreen('boss-screen');
+  loadPendingUsers();
+  loadAllUsers();
+}
+
+function loadPendingUsers() {
+  db.collection('users').where('status','==','pending').onSnapshot(function(snap) {
+    var el = document.getElementById('boss-pending-list');
+    if (snap.empty) { el.innerHTML = '<span style="font-size:0.78rem;color:var(--text3);">אין בקשות ממתינות</span>'; return; }
+    el.innerHTML = snap.docs.map(function(doc) {
+      var d = doc.data();
+      return '<div class="user-row"><div class="user-info"><div class="u-name">'+d.name+'</div><div class="u-role">'+ROLE_LABELS[d.role]+'</div></div>'+
+        '<div class="user-actions">'+
+        '<button class="ua-btn success" onclick="approveUser(&quot;"+doc.id+"&quot;)">אשר</button>'+
+        '<button class="ua-btn danger" onclick="rejectUser(&quot;"+doc.id+"&quot;)">דחה</button>'+
+        '</div></div>';
+    }).join('');
+  });
+}
+
+function loadAllUsers() {
+  db.collection('users').onSnapshot(function(snap) {
+    var el = document.getElementById('boss-users-list');
+    var ftoSelect = document.getElementById('boss-fto-select');
+    var noteSelect = document.getElementById('boss-note-user');
+    var viewSelect = document.getElementById('boss-view-notes-user');
+    var promoteSelect = document.getElementById('boss-promote-user');
+    var users = []; snap.forEach(function(doc){ users.push({id:doc.id,data:doc.data()}); });
+    el.innerHTML = users.map(function(u) {
+      var d = u.data;
+      return '<div class="user-row"><div class="user-info"><div class="u-name">'+d.name+'</div><div class="u-role">'+(ROLE_LABELS[d.role]||d.role)+' • '+(d.status==='pending'?'⏳ ממתין':'✅ פעיל')+(d.isAdmin?' • 👑 מנהל':'')+'</div></div>'+
+        '<div class="user-actions">'+
+        '<button class="ua-btn danger" onclick="deleteUser(&quot;"+u.id+"&quot;)">🗑️</button>'+
+        '</div></div>';
+    }).join('');
+    // Update selects
+    var ftoUsers = users.filter(function(u){ return u.data.role==='fto' && u.data.status==='active'; });
+    ftoSelect.innerHTML = '<option value="">בחר FTO...</option>' + ftoUsers.map(function(u){ return '<option value="'+u.id+'">'+u.data.name+'</option>'; }).join('');
+    var allActive = users.filter(function(u){ return u.data.status==='active'; });
+    var opts = allActive.map(function(u){ return '<option value="'+u.id+'">'+u.data.name+'</option>'; }).join('');
+    noteSelect.innerHTML = '<option value="">בחר שוטר...</option>' + opts;
+    viewSelect.innerHTML = '<option value="">בחר שוטר...</option>' + opts;
+    promoteSelect.innerHTML = '<option value="">בחר משתמש...</option>' + opts;
+  });
+}
+
+function approveUser(uid) { db.collection('users').doc(uid).update({status:'active'}); }
+function rejectUser(uid) { if(confirm('למחוק את המשתמש?')) db.collection('users').doc(uid).delete(); }
+function deleteUser(uid) { if(confirm('למחוק?')) db.collection('users').doc(uid).delete(); }
+function promoteToAdmin() {
+  var uid = document.getElementById('boss-promote-user').value;
+  if (!uid) { alert('בחר משתמש'); return; }
+  db.collection('users').doc(uid).update({isAdmin:true, role:'command'}).then(function(){ alert('המשתמש הפך למנהל!'); });
+}
+
+function assignCadet() {
+  var ftoUid = document.getElementById('boss-fto-select').value;
+  var name = document.getElementById('boss-cadet-name').value.trim();
+  var tag = document.getElementById('boss-cadet-tag').value.trim();
+  if (!ftoUid||!name||!tag) { alert('מלא את כל השדות'); return; }
+  db.collection('fto_assignments').doc(ftoUid).set({cadetName:name,cadetTag:tag,assignedAt:new Date().toISOString()})
+    .then(function(){ document.getElementById('boss-cadet-name').value=''; document.getElementById('boss-cadet-tag').value=''; alert('קאדט שויך בהצלחה!'); });
+}
+
+function addNote() {
+  var uid = document.getElementById('boss-note-user').value;
+  var text = document.getElementById('boss-note-text').value.trim();
+  if (!uid||!text) { alert('מלא את כל השדות'); return; }
+  db.collection('notes').add({
+    userId: uid, text: text,
+    author: currentUserData ? currentUserData.name : 'מנהל',
+    createdAt: new Date().toISOString()
+  }).then(function(){ document.getElementById('boss-note-text').value=''; alert('נוט נוסף!'); });
+}
+
+function loadNotes(uid) {
+  if (!uid) return;
+  db.collection('notes').where('userId','==',uid).orderBy('createdAt','desc').get().then(function(snap) {
+    var el = document.getElementById('notes-list');
+    if (snap.empty) { el.innerHTML = '<span style="font-size:0.78rem;color:var(--text3);">אין נוטים</span>'; return; }
+    el.innerHTML = snap.docs.map(function(doc) {
+      var d = doc.data();
+      return '<div class="note-item"><div class="note-author">'+d.author+' • '+d.createdAt.substring(0,10)+'</div><div class="note-text">'+d.text+'</div></div>';
+    }).join('');
+  });
+}
+
+// ── UTILS ──────────────────────────────────────────────────────────────────────
+function attachCardEffects() {
+  document.querySelectorAll('.portal-card').forEach(function(card) {
+    card.onmouseenter = function() { var i=card.querySelector('.ci'); if(i) i.style.transform='scale(1.1)'; };
+    card.onmouseleave = function() { var i=card.querySelector('.ci'); if(i) i.style.transform=''; };
+    card.onmousedown = playClick;
+  });
+}
+
+function playClick() {
+  try {
+    var ctx=new(window.AudioContext||window.webkitAudioContext)(),t=ctx.currentTime;
+    var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*.008),ctx.sampleRate);
+    var d=b.getChannelData(0);
+    for(var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*.001));
+    var s=ctx.createBufferSource(); s.buffer=b;
+    var g=ctx.createGain(); g.gain.setValueAtTime(.35,t); g.gain.exponentialRampToValueAtTime(.001,t+.008);
+    s.connect(g); g.connect(ctx.destination); s.start(t);
+  } catch(e) {}
+}
+
+// Mouse glow
+(function() {
+  var c=document.getElementById('glow-canvas');
+  if(!c) return;
+  var x=c.getContext('2d'),mx=-500,my=-500;
+  function r(){ c.width=innerWidth; c.height=innerHeight; }
+  r(); addEventListener('resize',r);
+  addEventListener('mousemove',function(e){ mx=e.clientX; my=e.clientY; });
+  (function draw(){
+    x.clearRect(0,0,c.width,c.height);
+    var g=x.createRadialGradient(mx,my,0,mx,my,150);
+    g.addColorStop(0,'rgba(79,142,247,0.06)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=g; x.fillRect(0,0,c.width,c.height);
+    requestAnimationFrame(draw);
+  })();
+})();
 </script>
 </body>
 </html>
