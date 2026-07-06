@@ -494,7 +494,10 @@ function showRoleScreen() {
 function buildPortalCards() {
   if (!currentUserData) return;
   var role = currentUserData.role;
-  var portals = PORTALS[role] || [];
+  var portals = (PORTALS[role] || []).filter(function(p) {
+    if (p.id === 'boss' && role !== 'high_command') return false;
+    return true;
+  });
   var grid = document.getElementById('portal-cards');
   grid.innerHTML = portals.map(function(p) {
     return '<div class="portal-card" style="--card-color:'+p.color+';--card-glow:'+p.glow+';" onclick="openPortal(this)" data-id="'+p.id+'" data-name="'+p.name+'" data-file="'+(p.file||'')+'">'+
@@ -511,7 +514,14 @@ function openPortal(el) {
   var name = el.getAttribute('data-name');
   var file = el.getAttribute('data-file');
   playClick();
-  if (id === 'boss') { openBossMenu(); return; }
+  if (id === 'boss') {
+    if (currentUserData && currentUserData.role === 'high_command') {
+      openBossMenu();
+    } else {
+      alert('אין לך הרשאה לכניסה לBoss Menu');
+    }
+    return;
+  }
   showScreen('portal-screen');
   document.getElementById('portal-name').textContent = name;
   document.getElementById('portal-iframe').src = BASE + file;
