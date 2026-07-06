@@ -5,7 +5,119 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Los Santos Police</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js">
+
+function toggle(header) {
+  var body = header.nextElementSibling;
+  var arrow = header.querySelector('.arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function showTab(tab) {
+  document.getElementById('study-tab').style.display = tab === 'study' ? 'block' : 'none';
+  document.getElementById('quiz-tab').style.display = tab === 'quiz' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach(function(b, i) {
+    b.classList.toggle('active', (i === 0 && tab === 'study') || (i === 1 && tab === 'quiz'));
+  });
+}
+
+var QUESTIONS = [
+  { q: 'מה הפעולה הראשונה בנוהל עלייה למשמרת?', opts: ['לעלות לקשר 1', 'לכתוב 10-8 ב-pchat', 'להדליק bodycam', 'לוודא פק"ל'], ans: 1, exp: 'הפעולה הראשונה היא לכתוב 10-8 ב-pchat, ואז לעלות לקשר 1.' },
+  { q: 'כמה הפסקות מותרות ביום?', opts: ['1', '2', '3', '4'], ans: 2, exp: 'ניתן לצאת ל-3 הפסקות ביום מקסימום, כל הפסקה עד 15 דקות.' },
+  { q: 'מה זמן ההפסקה המותר?', opts: ['10 דקות', '15 דקות', '20 דקות', '30 דקות'], ans: 1, exp: 'זמן ההפסקה המותר הוא עד 15 דקות.' },
+  { q: 'בנוהל עצירה שגרתית, מתי יוצאים מהניידת?', opts: ['מיד עם עצירה', 'אחרי שהנהג שם מפתחות על הרכב', 'אחרי שהנהג יוצא', 'כל עת'], ans: 1, exp: 'רק לאחר שהנהג שם מפתחות על גג הרכב, השוטר שלצד הנהג יוצא מהניידת.' },
+  { q: 'בזווית כמה מעלות יש לעצור מאחורי הרכב בעצירה שגרתית?', opts: ['30 מעלות', '45 מעלות', '60 מעלות', '90 מעלות'], ans: 1, exp: 'יש לעצור מאחורי הרכב בזווית של 45 מעלות כלפי הכביש.' },
+  { q: 'כמה ניידות נדרשות לקוד 5 (עצירה בסיכון)?', opts: ['2 ניידות, 4 שוטרים', '3 ניידות, 6 שוטרים', '2 ניידות, 6 שוטרים', '4 ניידות, 8 שוטרים'], ans: 1, exp: 'מינימום 3 ניידות ו-6 שוטרים לביצוע קוד 5.' },
+  { q: 'כמה דקות יש להמתין לפני מתן טאקל במרדף רגלי?', opts: ['30 שניות', '1 דקה', '2 דקות', '3 דקות'], ans: 1, exp: 'ניתן לתת טאקל לאחר דקה מתחילת המרדף, דקה בין כל טאקל.' },
+  { q: 'כמה דקות יש להמתין לפני מתן טייזר במרדף רגלי?', opts: ['1 דקה', '2 דקות', '3 דקות', '5 דקות'], ans: 1, exp: 'ניתן לתת טייזר 2 דקות מתחילת המרדף, 2 דקות בין כל שימוש.' },
+  { q: 'מה קורה אם לא הוקראו זכויות ישר אחרי אזיקה ללא סיבה?', opts: ['אין עונש', 'הפחתת 10% מהעונש', 'הפחתת 30% מהעונש', 'ביטול המעצר'], ans: 2, exp: 'אם לא הוקראו זכויות ישר אחרי אזיקה ללא סיבה מוצדקת — הפחתת 30% מהעונש.' },
+  { q: 'מה אחוז ההפחתה מהעונש אם לא הוקראו זכויות לפני פתיחת Incident?', opts: ['10%', '30%', '50%', '70%'], ans: 3, exp: 'אם לא הוקראו זכויות לפני פתיחת האינסידנט — הפחתת 70% מהעונש.' },
+  { q: 'מה המהירות המקסימלית למתן פיט?', opts: ['100 קמ"ש', '120 קמ"ש', '135 קמ"ש', '150 קמ"ש'], ans: 2, exp: 'פיט ניתן עד 135 קמ"ש בדופן האחורי של הרכב בלבד.' },
+  { q: 'כמה אחרי כמה דקות ממרדף ניתן לתת פיט?', opts: ['2 דקות', '3 דקות', '4 דקות', '5 דקות'], ans: 2, exp: 'ניתן לתת פיט לאחר כ-4 דקות מתחילת מרדף.' },
+  { q: 'כמה יריות אזהרה לאוויר יש לירות לפני ירי לפלג גוף תחתון?', opts: ['1', '2', '3', '4'], ans: 2, exp: 'יש להזהיר מילולית, ואז לירות 3 יריות אזהרה לאוויר לפני ירי לפלג גוף תחתון.' },
+  { q: 'מה 3 התנאים לפתיחה בירי?', opts: ['נשק + מרדף + כוונה', 'אמצעי + כוונה + יכולת', 'איום + נשק + אישור', 'כוונה + יכולת + פקודה'], ans: 1, exp: 'שלושת התנאים הם: אמצעי (החשוד מחזיק נשק), כוונה (כוונה מיידית לפגוע), יכולת (יכולת פיזית לממש).' },
+  { q: 'מה לובשים לפני כניסה לחדר תדריכים?', opts: ['מדים מלאים כולל ווסט', 'מדים ללא ווסט, כובע ומשקפיים', 'לבוש אזרחי', 'כל מה שרוצים'], ans: 1, exp: 'יש להוריד ווסט, כובע ומשקפי שמש לפני הכניסה לחדר תדריכים.' },
+];
+
+var current = 0, score = 0, answered = false;
+var shuffled = [];
+
+function startQuiz() {
+  current = 0; score = 0; answered = false;
+  shuffled = QUESTIONS.slice().sort(function() { return Math.random() - 0.5; }).slice(0, 15);
+  document.getElementById('quiz-start').style.display = 'none';
+  document.getElementById('quiz-result').style.display = 'none';
+  document.getElementById('quiz-card').style.display = 'block';
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  var q = shuffled[current];
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('q-num').textContent = (current + 1) + ' / ' + shuffled.length;
+  document.getElementById('prog-fill').style.width = ((current / shuffled.length) * 100) + '%';
+  document.getElementById('q-explain').style.display = 'none';
+  document.getElementById('btn-next').style.display = 'none';
+
+  var opts = document.getElementById('q-options');
+  opts.innerHTML = '';
+  var indices = q.opts.map(function(_, i) { return i; }).sort(function() { return Math.random() - 0.5; });
+  indices.forEach(function(i) {
+    var btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = q.opts[i];
+    btn.dataset.idx = i;
+    btn.onclick = function() { answer(this, q.ans); };
+    opts.appendChild(btn);
+  });
+}
+
+function answer(btn, correct) {
+  if (answered) return;
+  answered = true;
+  var chosen = parseInt(btn.dataset.idx);
+  document.querySelectorAll('.option').forEach(function(b) {
+    b.classList.add('disabled');
+    if (parseInt(b.dataset.idx) === correct) b.classList.add('correct');
+  });
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    score++;
+  } else {
+    btn.classList.add('wrong');
+  }
+  var expEl = document.getElementById('q-explain');
+  expEl.textContent = shuffled[current].exp;
+  expEl.style.display = 'block';
+  document.getElementById('btn-next').style.display = 'block';
+  document.getElementById('btn-next').textContent = current < shuffled.length - 1 ? 'הבא ←' : 'סיום ✓';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= shuffled.length) {
+    showResult();
+  } else {
+    showQuestion();
+  }
+}
+
+function showResult() {
+  document.getElementById('quiz-card').style.display = 'none';
+  var result = document.getElementById('quiz-result');
+  result.style.display = 'block';
+  var pct = Math.round((score / shuffled.length) * 100);
+  var scoreEl = document.getElementById('result-score');
+  scoreEl.textContent = score + '/' + shuffled.length;
+  scoreEl.style.color = pct >= 80 ? '#56d364' : pct >= 60 ? '#ffa500' : '#ff7b72';
+  var msgs = ['זקוק לעוד לימוד 📚', 'כמעט! תחזור על הנהלים 🔄', 'לא רע! עוד קצת ✊', 'כל הכבוד! 👏', 'מושלם! מוכן לבחינה 🏆'];
+  var msgIdx = pct < 40 ? 0 : pct < 60 ? 1 : pct < 75 ? 2 : pct < 90 ? 3 : 4;
+  document.getElementById('result-msg').textContent = msgs[msgIdx] + ' — ' + pct + '%';
+}
+
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 :root {
@@ -175,6 +287,61 @@ header {
 
 /* Mouse glow */
 #glow-canvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; }
+
+  /* ── CADET STUDY ── */
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+  
+  /* Header */
+  .top-bar { background: #161b22; border-bottom: 1px solid #30363d; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  .top-bar h1 { font-size: 1rem; font-weight: 600; color: #58a6ff; }
+  .tab-btns { display: flex; gap: 8px; margin-right: auto; }
+  .tab-btn { background: none; border: 1px solid #30363d; border-radius: 6px; padding: 6px 16px; color: #8b949e; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+  .tab-btn.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+  
+  /* Study */
+  #study-tab { padding: 24px; max-width: 860px; margin: 0 auto; }
+  .procedure { background: #161b22; border: 1px solid #30363d; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .proc-header { padding: 14px 18px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: 0.92rem; color: #58a6ff; }
+  .proc-header:hover { background: #1c2128; }
+  .proc-body { padding: 16px 18px; border-top: 1px solid #30363d; font-size: 0.85rem; line-height: 1.9; color: #c9d1d9; display: none; }
+  .proc-body.open { display: block; }
+  .proc-body ol, .proc-body ul { padding-right: 20px; margin: 8px 0; }
+  .proc-body li { margin-bottom: 6px; }
+  .proc-body .warn { background: rgba(255,166,0,0.1); border: 1px solid rgba(255,166,0,0.3); border-radius: 6px; padding: 8px 12px; margin-top: 10px; color: #ffa500; font-size: 0.82rem; }
+  .proc-body .tag { display: inline-block; background: #1f6feb22; border: 1px solid #1f6feb; border-radius: 4px; padding: 1px 8px; font-size: 0.75rem; color: #58a6ff; margin: 2px; }
+  .arrow { transition: transform 0.2s; }
+  .arrow.open { transform: rotate(180deg); }
+  
+  /* Quiz */
+  #quiz-tab { padding: 24px; max-width: 700px; margin: 0 auto; display: none; }
+  .quiz-start { text-align: center; padding: 60px 20px; }
+  .quiz-start h2 { font-size: 1.5rem; margin-bottom: 10px; color: #58a6ff; }
+  .quiz-start p { color: #8b949e; margin-bottom: 30px; font-size: 0.88rem; }
+  .btn-start { background: #1f6feb; border: none; border-radius: 8px; padding: 12px 32px; color: #fff; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+  .btn-start:hover { background: #388bfd; }
+  
+  .quiz-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 28px; display: none; }
+  .quiz-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .progress-bar { flex: 1; height: 4px; background: #30363d; border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: #1f6feb; border-radius: 2px; transition: width 0.3s; }
+  .q-num { font-size: 0.75rem; color: #8b949e; white-space: nowrap; }
+  .question { font-size: 1rem; font-weight: 600; margin-bottom: 20px; line-height: 1.6; color: #e6edf3; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option { background: #1c2128; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; cursor: pointer; font-size: 0.88rem; transition: all 0.2s; text-align: right; }
+  .option:hover:not(.disabled) { border-color: #1f6feb; background: #1f6feb15; }
+  .option.correct { border-color: #2ea043; background: #2ea04320; color: #56d364; }
+  .option.wrong { border-color: #da3633; background: #da363320; color: #ff7b72; }
+  .option.disabled { cursor: default; }
+  .explain { margin-top: 14px; padding: 12px 14px; background: #1c2128; border: 1px solid #30363d; border-radius: 8px; font-size: 0.82rem; color: #8b949e; line-height: 1.6; display: none; }
+  .btn-next { margin-top: 16px; background: #1f6feb; border: none; border-radius: 8px; padding: 10px 24px; color: #fff; font-size: 0.88rem; cursor: pointer; display: none; }
+  
+  .quiz-result { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 40px; text-align: center; display: none; }
+  .result-score { font-size: 3rem; font-weight: 700; margin-bottom: 8px; }
+  .result-msg { font-size: 1rem; color: #8b949e; margin-bottom: 24px; }
+  .btn-retry { background: #1f6feb; border: none; border-radius: 8px; padding: 10px 24px; color: #fff; font-size: 0.88rem; cursor: pointer; }
+  
 </style>
 </head>
 <body>
@@ -346,6 +513,7 @@ var auth = null; // not used
 var BASE = 'https://harelmamaliak-dot.github.io/lspd-website/';
 var PORTALS = {
   cadet: [
+    { id:'cadet-study', icon:'📖', name:'נהלים ובחינה', desc:'לימוד עצמי + בחינה אמריקאית', color:'#58a6ff', glow:'rgba(88,166,255,0.2)', file:'cadet_study.html' },
     { id:'cadet-feedback', icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' }
   ],
   officer: [
@@ -522,9 +690,34 @@ function openPortal(el) {
     }
     return;
   }
+  if (id === 'cadet-study') {
+    showCadetStudy();
+    return;
+  }
   showScreen('portal-screen');
   document.getElementById('portal-name').textContent = name;
   document.getElementById('portal-iframe').src = BASE + file;
+}
+
+function showCadetStudy() {
+  // Hide all screens
+  ['pending-screen','role-screen','portal-screen','boss-screen'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) { el.style.display = 'none'; el.style.flexDirection = ''; }
+  });
+  var s = document.getElementById('cadet-study-screen');
+  s.style.display = 'flex';
+  s.style.flexDirection = 'column';
+  // Add back button
+  var bar = s.querySelector('.top-bar');
+  if (bar && !bar.querySelector('.back-to-portal')) {
+    var btn = document.createElement('button');
+    btn.className = 'portal-back back-to-portal';
+    btn.textContent = '← חזור';
+    btn.style.cssText = 'margin-right:8px;';
+    btn.onclick = function() { s.style.display = 'none'; showRoleScreen(); };
+    bar.insertBefore(btn, bar.firstChild);
+  }
 }
 
 function closePortal() { showRoleScreen(); document.getElementById('portal-iframe').src = ''; }
@@ -679,5 +872,349 @@ function playClick() {
 })();
 
 //]]></script>
+
+  <!-- CADET STUDY SCREEN -->
+  <div id="cadet-study-screen" style="display:none;flex-direction:column;flex:1;overflow-y:auto;">
+
+
+<div class="top-bar">
+  <h1>🎓 קאדט — חומר לימוד</h1>
+  <div class="tab-btns">
+    <button class="tab-btn active" onclick="showTab('study')">📖 נהלים</button>
+    <button class="tab-btn" onclick="showTab('quiz')">✏️ בחינה עצמית</button>
+  </div>
+</div>
+
+<!-- STUDY TAB -->
+<div id="study-tab">
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל עלייה למשמרת <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ol>
+        <li>לכתוב <span class="tag">10-8</span> ב-pchat</li>
+        <li>לעלות לקשר 1</li>
+        <li>לוודא שהפק"ל המלא נמצא עליך ולהשלים במידת הצורך</li>
+        <li>להדליק מצלמת גוף (bodycam)</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל ירידה ממשמרת <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <p><strong>יוצאים מהשרת:</strong> לכתוב <span class="tag">10-7</span> ב-pchat ולצאת.</p>
+      <p style="margin-top:10px;"><strong>נשארים בשרת:</strong></p>
+      <ol>
+        <li>לבקש אישור ממפקד — אין לרדת ממשמרת ללא אישור!</li>
+        <li>להוריד מדים ולעבור ללבוש אזרחי מלא</li>
+        <li>להוריד כל ציוד משטרתי ולשים בלוקר האישי</li>
+        <li>לעדכן תג: <span class="tag">XXX-10-7</span> (לדוגמה: 203-10-7)</li>
+      </ol>
+      <div class="warn">⚠️ חל איסור להסתובב עם ניידת משטרתית לא במשמרת!</div>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל 10-6 (הפסקה) <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ol>
+        <li>לשים אדום בפאנל (לא פנוי לאירועים)</li>
+        <li>לכתוב <span class="tag">10-6</span> ב-pchat</li>
+        <li>לכתוב <span class="tag">10-6/</span> — ישנה תג אוטומטית ויעביר לקשר הפסקה</li>
+        <li>ללכת ל-break room בתחנה</li>
+      </ol>
+      <div class="warn">⚠️ עד 15 דקות, מקסימום 3 הפסקות ביום. בחזרה — לשנות תג, לשים ירוק בפאנל, לחזור לקשר 1!</div>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל חדר תדריכים <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ol>
+        <li>לעלות לקשר 1 אם לא עליו</li>
+        <li>לוודא שכל הפק"ל נמצא, במידה ויש חוסר לרוץ להשלים</li>
+        <li>להוריד ווסט, כובע ומשקפי שמש לפני הכניסה</li>
+        <li>להגיע לחדר תדריכים ולהתיישב בסדר עם היחידה/המחוז</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל עצירה שגרתית <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ol>
+        <li>להדליק אורות + סירנה ולצעוק לנהג לעצור עם שני גלגלים ימניים על המדרכה. לוודא שהאזור בטוח לעצירה</li>
+        <li>לעצור מאחורי הרכב בזווית של 45 מעלות כלפי הכביש</li>
+        <li>להורות לנהג לדומם מנוע ולשים מפתחות על גג הרכב (או רצפה אם אופנוע)</li>
+        <li>רק אחרי שהמפתחות הונחו — השוטר שלצד הנהג יוצא וניגש לחלון. הנהג נשאר בניידת!</li>
+        <li>להציג עצמו מילולית + להציג תג פיזית</li>
+        <li>לבקש הזדהות ורשיונות, לוודא שאין צו מעצר ושהרכב לא גנוב</li>
+        <li>להציג לנהג את סיבת העצירה</li>
+        <li>ליקוי/עבירת תנועה — לתת דוח/אזהרה לפי שיקול דעת. חובה לתעד ב-MDT + הערה בפרופיל</li>
+        <li>עם סיום — להורות לנהג שהוא משוחרר ורשאי לנסוע, ואז להיכנס לניידת</li>
+      </ol>
+      <div class="warn">⚠️ יש להקפיד על שיח מכבד והולם לאורך כל העצירה!</div>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל עצירת תנועה בסיכון — קוד 5 <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <p>מבוצע כאשר יש <strong>צו מעצר פעיל</strong> על חשוד מסוכן ו/או חמוש.</p>
+      <ol style="margin-top:10px;">
+        <li>לדווח בקשר ולבקש תגבורת — מינימום 3 ניידות, 6 שוטרים</li>
+        <li>לשמור מרחק ביטחון של 10 מטרים לפחות מאחורי הרכב</li>
+        <li>כל השוטרים יוצאים עם נשק שלוף, עומדים מאחורי דלת פתוחה</li>
+        <li>מנהל העצירה יצעק: "צא מהרכב לאט ובידיים מורמות! תסתובב עם הגב אלי! תתקדם אחורה לאט עם ידיים למעלה!"</li>
+        <li>כשהחשוד במרחק 2-3 מטרים — שוטר ניגש לאזיקה</li>
+        <li>לאחר אזיקה — נמשיך לפי נוהל מעצר + חיפוש ברכב + עיקולו</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל פתיחת מרדף (10-80) <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <p>מי שליד הנהג עולה לקשר ומדווח:</p>
+      <p style="margin:10px 0; padding:10px; background:#1c2128; border-radius:6px; font-size:0.82rem;">
+        "כאן [תג] + [כמות שוטרים] פתחנו ב-10-80 לאחר רכב שביצע [סיבה], צריכים/לא צריכים 10-78 ל[מיקום], לעלות קשר [X]"
+      </p>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל מרדף רגלי (10-70) <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ol>
+        <li>השוטר שלצד הנהג פורק ורץ אחר החשוד</li>
+        <li>הנהג עוקב עם הניידת לאט ומדווח בקשר על פתיחת המרדף</li>
+      </ol>
+      <p style="margin-top:10px;"><strong>כללים:</strong></p>
+      <ul>
+        <li>טאקל: מותר אחרי דקה, דקה בין כל טאקל</li>
+        <li>טייזר: מותר אחרי 2 דקות, 2 דקות בין כל שימוש</li>
+        <li>חשוד שולף נשק חם: הזהרה מילולית ← 3 יריות אזהרה לאוויר ← פלג גוף תחתון אם לא מוריד</li>
+        <li>חשוד מכוון עליך: ירי מיידי למרכז מסה</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל מעצר חשוד <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ol>
+        <li>ישר אחרי אזיקה — להקריא זכויות מירנדה:<br>
+          <em style="color:#8b949e;">"יש לך את הזכות לשמור על השתיקה... לשכור עורך דין... לקבל אוכל, מים, טיפול רפואי ושיחת טלפון בת 60 שניות."</em></li>
+        <li>לשאול האם הזכויות מובנות — אם לא, לחזור פעם שנייה</li>
+        <li>בתחנה: חיפוש + לקחת דברים לא חוקיים + קשר + טלפון</li>
+        <li>לוודא ב-MDT תמונה עדכנית + טביעת אצבע, אם חסר — לעדכן</li>
+        <li>להכניס לתא מעצר ולהוריד אזיקה</li>
+        <li>למלא Incident ב-MDT בצורה מלאה</li>
+        <li>לשים חפצים מוחרמים ב-Evidence + לצרף תמונה ב-Incident</li>
+        <li>לתת דוח ולשלוח לכלא למספר החודשים ב-Incident</li>
+      </ol>
+      <div class="warn">⚠️ לא הוקראו זכויות ישר אחרי אזיקה ללא סיבה — הפחתת 30% מהעונש! לפני פתיחת האינסידנט — הפחתת 70%!</div>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל פיטים <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <ul>
+        <li>פיט מותר אחרי ~4 דקות מתחילת מרדף</li>
+        <li>כל דקה מהפיט הראשון ניתן פיט נוסף</li>
+        <li>תמיד נדרש אישור מנהל המרדף!</li>
+        <li>פיט עד 135 קמ"ש בדופן האחורי בלבד</li>
+        <li>ספייקים — גם אחרי ~4 דקות, השוטר חייב להישאר עד הסרתם</li>
+      </ul>
+      <div class="warn">⚠️ שוטר שייתן פיט מעל 135 יענש על עבירה על נוהל משטרתי!</div>
+    </div>
+  </div>
+
+  <div class="procedure">
+    <div class="proc-header" onclick="toggle(this)">
+      נוהל פתיחה בירי <span class="arrow">▾</span>
+    </div>
+    <div class="proc-body">
+      <p><strong>3 תנאים חייבים להתקיים יחד:</strong></p>
+      <ul style="margin:10px 0;">
+        <li><strong>אמצעי</strong> — החשוד מחזיק נשק חם/קר</li>
+        <li><strong>כוונה</strong> — יש לו כוונה מיידית לפגוע</li>
+        <li><strong>יכולת</strong> — יש לו יכולת פיזית לממש</li>
+      </ul>
+      <p><strong>5 סיטואציות מאושרות:</strong></p>
+      <ol style="margin-top:8px;">
+        <li>החשוד מכוון/יורה עליך</li>
+        <li>מרדף רגלי עם נשק שלוף: הזהרה ← 3 אזהרות לאוויר ← פלג גוף תחתון</li>
+        <li>חשוד קפץ למים בכוונה ללא סירה — מותר. עם סירה — רק אחרי 15 דקות מרדף ימי</li>
+        <li>רכב נותן פיטים מכוון פעמיים — באישור מנהל המרדף</li>
+        <li>עצירה שגרתית ובורח ללא ניידת/אופנוע/מסוק — ירי לגלגלים בלבד</li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+
+<!-- QUIZ TAB -->
+<div id="quiz-tab">
+  <div class="quiz-start" id="quiz-start">
+    <h2>✏️ בחינה עצמית</h2>
+    <p>15 שאלות אמריקאיות על הנהלים.<br>בדוק את עצמך לפני הבחינה האמיתית!</p>
+    <button class="btn-start" onclick="startQuiz()">התחל בחינה</button>
+  </div>
+
+  <div class="quiz-card" id="quiz-card">
+    <div class="quiz-progress">
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+      <span class="q-num" id="q-num">1 / 15</span>
+    </div>
+    <div class="question" id="q-text"></div>
+    <div class="options" id="q-options"></div>
+    <div class="explain" id="q-explain"></div>
+    <button class="btn-next" id="btn-next" onclick="nextQuestion()">הבא ←</button>
+  </div>
+
+  <div class="quiz-result" id="quiz-result">
+    <div class="result-score" id="result-score"></div>
+    <div class="result-msg" id="result-msg"></div>
+    <button class="btn-retry" onclick="startQuiz()">נסה שוב</button>
+  </div>
+</div>
+
+<script>
+function toggle(header) {
+  var body = header.nextElementSibling;
+  var arrow = header.querySelector('.arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function showTab(tab) {
+  document.getElementById('study-tab').style.display = tab === 'study' ? 'block' : 'none';
+  document.getElementById('quiz-tab').style.display = tab === 'quiz' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach(function(b, i) {
+    b.classList.toggle('active', (i === 0 && tab === 'study') || (i === 1 && tab === 'quiz'));
+  });
+}
+
+var QUESTIONS = [
+  { q: 'מה הפעולה הראשונה בנוהל עלייה למשמרת?', opts: ['לעלות לקשר 1', 'לכתוב 10-8 ב-pchat', 'להדליק bodycam', 'לוודא פק"ל'], ans: 1, exp: 'הפעולה הראשונה היא לכתוב 10-8 ב-pchat, ואז לעלות לקשר 1.' },
+  { q: 'כמה הפסקות מותרות ביום?', opts: ['1', '2', '3', '4'], ans: 2, exp: 'ניתן לצאת ל-3 הפסקות ביום מקסימום, כל הפסקה עד 15 דקות.' },
+  { q: 'מה זמן ההפסקה המותר?', opts: ['10 דקות', '15 דקות', '20 דקות', '30 דקות'], ans: 1, exp: 'זמן ההפסקה המותר הוא עד 15 דקות.' },
+  { q: 'בנוהל עצירה שגרתית, מתי יוצאים מהניידת?', opts: ['מיד עם עצירה', 'אחרי שהנהג שם מפתחות על הרכב', 'אחרי שהנהג יוצא', 'כל עת'], ans: 1, exp: 'רק לאחר שהנהג שם מפתחות על גג הרכב, השוטר שלצד הנהג יוצא מהניידת.' },
+  { q: 'בזווית כמה מעלות יש לעצור מאחורי הרכב בעצירה שגרתית?', opts: ['30 מעלות', '45 מעלות', '60 מעלות', '90 מעלות'], ans: 1, exp: 'יש לעצור מאחורי הרכב בזווית של 45 מעלות כלפי הכביש.' },
+  { q: 'כמה ניידות נדרשות לקוד 5 (עצירה בסיכון)?', opts: ['2 ניידות, 4 שוטרים', '3 ניידות, 6 שוטרים', '2 ניידות, 6 שוטרים', '4 ניידות, 8 שוטרים'], ans: 1, exp: 'מינימום 3 ניידות ו-6 שוטרים לביצוע קוד 5.' },
+  { q: 'כמה דקות יש להמתין לפני מתן טאקל במרדף רגלי?', opts: ['30 שניות', '1 דקה', '2 דקות', '3 דקות'], ans: 1, exp: 'ניתן לתת טאקל לאחר דקה מתחילת המרדף, דקה בין כל טאקל.' },
+  { q: 'כמה דקות יש להמתין לפני מתן טייזר במרדף רגלי?', opts: ['1 דקה', '2 דקות', '3 דקות', '5 דקות'], ans: 1, exp: 'ניתן לתת טייזר 2 דקות מתחילת המרדף, 2 דקות בין כל שימוש.' },
+  { q: 'מה קורה אם לא הוקראו זכויות ישר אחרי אזיקה ללא סיבה?', opts: ['אין עונש', 'הפחתת 10% מהעונש', 'הפחתת 30% מהעונש', 'ביטול המעצר'], ans: 2, exp: 'אם לא הוקראו זכויות ישר אחרי אזיקה ללא סיבה מוצדקת — הפחתת 30% מהעונש.' },
+  { q: 'מה אחוז ההפחתה מהעונש אם לא הוקראו זכויות לפני פתיחת Incident?', opts: ['10%', '30%', '50%', '70%'], ans: 3, exp: 'אם לא הוקראו זכויות לפני פתיחת האינסידנט — הפחתת 70% מהעונש.' },
+  { q: 'מה המהירות המקסימלית למתן פיט?', opts: ['100 קמ"ש', '120 קמ"ש', '135 קמ"ש', '150 קמ"ש'], ans: 2, exp: 'פיט ניתן עד 135 קמ"ש בדופן האחורי של הרכב בלבד.' },
+  { q: 'כמה אחרי כמה דקות ממרדף ניתן לתת פיט?', opts: ['2 דקות', '3 דקות', '4 דקות', '5 דקות'], ans: 2, exp: 'ניתן לתת פיט לאחר כ-4 דקות מתחילת מרדף.' },
+  { q: 'כמה יריות אזהרה לאוויר יש לירות לפני ירי לפלג גוף תחתון?', opts: ['1', '2', '3', '4'], ans: 2, exp: 'יש להזהיר מילולית, ואז לירות 3 יריות אזהרה לאוויר לפני ירי לפלג גוף תחתון.' },
+  { q: 'מה 3 התנאים לפתיחה בירי?', opts: ['נשק + מרדף + כוונה', 'אמצעי + כוונה + יכולת', 'איום + נשק + אישור', 'כוונה + יכולת + פקודה'], ans: 1, exp: 'שלושת התנאים הם: אמצעי (החשוד מחזיק נשק), כוונה (כוונה מיידית לפגוע), יכולת (יכולת פיזית לממש).' },
+  { q: 'מה לובשים לפני כניסה לחדר תדריכים?', opts: ['מדים מלאים כולל ווסט', 'מדים ללא ווסט, כובע ומשקפיים', 'לבוש אזרחי', 'כל מה שרוצים'], ans: 1, exp: 'יש להוריד ווסט, כובע ומשקפי שמש לפני הכניסה לחדר תדריכים.' },
+];
+
+var current = 0, score = 0, answered = false;
+var shuffled = [];
+
+function startQuiz() {
+  current = 0; score = 0; answered = false;
+  shuffled = QUESTIONS.slice().sort(function() { return Math.random() - 0.5; }).slice(0, 15);
+  document.getElementById('quiz-start').style.display = 'none';
+  document.getElementById('quiz-result').style.display = 'none';
+  document.getElementById('quiz-card').style.display = 'block';
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  var q = shuffled[current];
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('q-num').textContent = (current + 1) + ' / ' + shuffled.length;
+  document.getElementById('prog-fill').style.width = ((current / shuffled.length) * 100) + '%';
+  document.getElementById('q-explain').style.display = 'none';
+  document.getElementById('btn-next').style.display = 'none';
+
+  var opts = document.getElementById('q-options');
+  opts.innerHTML = '';
+  var indices = q.opts.map(function(_, i) { return i; }).sort(function() { return Math.random() - 0.5; });
+  indices.forEach(function(i) {
+    var btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = q.opts[i];
+    btn.dataset.idx = i;
+    btn.onclick = function() { answer(this, q.ans); };
+    opts.appendChild(btn);
+  });
+}
+
+function answer(btn, correct) {
+  if (answered) return;
+  answered = true;
+  var chosen = parseInt(btn.dataset.idx);
+  document.querySelectorAll('.option').forEach(function(b) {
+    b.classList.add('disabled');
+    if (parseInt(b.dataset.idx) === correct) b.classList.add('correct');
+  });
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    score++;
+  } else {
+    btn.classList.add('wrong');
+  }
+  var expEl = document.getElementById('q-explain');
+  expEl.textContent = shuffled[current].exp;
+  expEl.style.display = 'block';
+  document.getElementById('btn-next').style.display = 'block';
+  document.getElementById('btn-next').textContent = current < shuffled.length - 1 ? 'הבא ←' : 'סיום ✓';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= shuffled.length) {
+    showResult();
+  } else {
+    showQuestion();
+  }
+}
+
+function showResult() {
+  document.getElementById('quiz-card').style.display = 'none';
+  var result = document.getElementById('quiz-result');
+  result.style.display = 'block';
+  var pct = Math.round((score / shuffled.length) * 100);
+  var scoreEl = document.getElementById('result-score');
+  scoreEl.textContent = score + '/' + shuffled.length;
+  scoreEl.style.color = pct >= 80 ? '#56d364' : pct >= 60 ? '#ffa500' : '#ff7b72';
+  var msgs = ['זקוק לעוד לימוד 📚', 'כמעט! תחזור על הנהלים 🔄', 'לא רע! עוד קצת ✊', 'כל הכבוד! 👏', 'מושלם! מוכן לבחינה 🏆'];
+  var msgIdx = pct < 40 ? 0 : pct < 60 ? 1 : pct < 75 ? 2 : pct < 90 ? 3 : 4;
+  document.getElementById('result-msg').textContent = msgs[msgIdx] + ' — ' + pct + '%';
+}
+</script>
+
+  </div>
+
 </body>
 </html>
