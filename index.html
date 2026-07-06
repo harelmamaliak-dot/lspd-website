@@ -497,8 +497,7 @@ function buildPortalCards() {
   var portals = PORTALS[role] || [];
   var grid = document.getElementById('portal-cards');
   grid.innerHTML = portals.map(function(p) {
-    var onclick = 'openPortal(&quot;'+p.id+'&quot;,&quot;'+p.name+'&quot;,&quot;'+p.file+'&quot;)';
-    return '<div class="portal-card" style="--card-color:'+p.color+';--card-glow:'+p.glow+';" onclick="'+onclick+'">'+
+    return '<div class="portal-card" style="--card-color:'+p.color+';--card-glow:'+p.glow+';" onclick="openPortal(this)" data-id="'+p.id+'" data-name="'+p.name+'" data-file="'+(p.file||'')+'">'+
       '<span class="ci">'+p.icon+'</span>'+
       '<div class="cn" style="color:'+p.color+'">'+p.name+'</div>'+
       '<div class="cd">'+p.desc+'</div>'+
@@ -507,7 +506,10 @@ function buildPortalCards() {
   attachCardEffects();
 }
 
-function openPortal(id, name, file) {
+function openPortal(el) {
+  var id = el.getAttribute('data-id');
+  var name = el.getAttribute('data-name');
+  var file = el.getAttribute('data-file');
   playClick();
   if (id === 'boss') { openBossMenu(); return; }
   showScreen('portal-screen');
