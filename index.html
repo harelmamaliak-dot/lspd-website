@@ -6,7 +6,6 @@
 <title>Los Santos Police</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 :root {
@@ -339,8 +338,8 @@ var firebaseConfig = {
   appId: "1:364977141598:web:861a4ff22fe8e6b28681cf"
 };
 firebase.initializeApp(firebaseConfig);
-var auth = firebase.auth();
 var db = firebase.firestore();
+var auth = null; // not used
 
 // ── PORTALS ────────────────────────────────────────────────────────────────────
 var BASE = 'https://harelmamaliak-dot.github.io/lspd-website/';
@@ -396,13 +395,15 @@ function doLogin() {
   var username = document.getElementById('l-username').value.trim();
   var password = document.getElementById('l-password').value;
   if (!username || !password) { showAuthError('נא למלא את כל השדות'); return; }
-  // Find user by username
   db.collection('users').where('username','==',username).get().then(function(snap) {
     if (snap.empty) { showAuthError('שם משתמש לא קיים'); return; }
-    var userData = snap.docs[0].data();
-    auth.signInWithEmailAndPassword(userData.email, password)
-      .catch(function(e) { showAuthError('סיסמה שגויה'); });
-  }).catch(function() { showAuthError('שגיאה בכניסה'); });
+    var doc = snap.docs[0];
+    var userData = doc.data();
+    if (userData.password !== password) { showAuthError('סיסמה שגויה'); return; }
+    // Save session
+    localStorage.setItem('lspd_uid', doc.id);
+    loadUserSession(doc.id);
+  }).catch(function(e) { showAuthError('שגיאה בכניסה: ' + e.message); });
 }
 
 function doRegister() {
@@ -411,73 +412,65 @@ function doRegister() {
   var role = document.getElementById('r-role').value;
   var password = document.getElementById('r-password').value;
   if (!name||!username||!password) { showAuthError('נא למלא את כל השדות'); return; }
-  if (password.length < 6) { showAuthError('סיסמה חייבת להיות לפחות 6 תווים'); return; }
+  if (password.length < 4) { showAuthError('סיסמה חייבת להיות לפחות 4 תווים'); return; }
   var needsApproval = (role==='command'||role==='high_command');
-  // Use username+random as fake email for Firebase Auth
-  var fakeEmail = username.toLowerCase().replace(/[^a-z0-9]/g,'') + '_' + Date.now() + '@lspd.local';
-  auth.createUserWithEmailAndPassword(fakeEmail, password).then(function(cred) {
-    return db.collection('users').doc(cred.user.uid).set({
-      uid: cred.user.uid, name: name, username: username,
-      email: fakeEmail, role: role,
-      status: needsApproval ? 'pending' : 'active',
+  // Check username not taken
+  db.collection('users').where('username','==',username).get().then(function(snap) {
+    if (!snap.empty) { showAuthError('שם משתמש תפוס'); return; }
+    return db.collection('users').add({
+      name: name, username: username, password: password,
+      role: role, status: needsApproval ? 'pending' : 'active',
       isAdmin: false, createdAt: new Date().toISOString()
+    }).then(function(ref) {
+      if (needsApproval) {
+        document.getElementById('pending-note').style.display = 'block';
+      } else {
+        localStorage.setItem('lspd_uid', ref.id);
+        loadUserSession(ref.id);
+      }
     });
-  }).then(function() {
-    if (needsApproval) {
-      document.getElementById('pending-note').style.display = 'block';
-      showAuthError('');
-    }
-  }).catch(function(e) {
-    showAuthError(e.code === 'auth/email-already-in-use' ? 'שם משתמש תפוס' : 'שגיאה בהרשמה: ' + e.message);
-  });
+  }).catch(function(e) { showAuthError('שגיאה בהרשמה: ' + e.message); });
 }
 
 function doLogout() {
-  auth.signOut();
+  localStorage.removeItem('lspd_uid');
+  currentUser = null; currentUserData = null;
+  showAuthScreen();
 }
 
 // ── AUTH STATE ─────────────────────────────────────────────────────────────────
-// Initialize admin user if needed
-var ADMIN_UID = 'B2M3CCM2uObzph1SvN4z0nRJx6r2';
-db.collection('users').doc(ADMIN_UID).get().then(function(doc) {
-  if (!doc.exists) {
-    db.collection('users').doc(ADMIN_UID).set({
-      uid: ADMIN_UID,
-      name: 'Admin',
-      username: 'admin',
-      email: 'admin@lspd.local',
-      role: 'high_command',
-      status: 'active',
-      isAdmin: true,
-      createdAt: new Date().toISOString()
-    });
-  }
-}).catch(function(){});
+function loadUserSession(uid) {
+  db.collection('users').doc(uid).get().then(function(doc) {
+    if (!doc.exists) { localStorage.removeItem('lspd_uid'); showAuthScreen(); return; }
+    currentUser = {uid: uid};
+    currentUserData = doc.data();
+    currentUserData.uid = uid;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('header-username').textContent = currentUserData.name;
+    var roleLabel = ROLE_LABELS[currentUserData.role] || currentUserData.role;
+    var roleBadge = document.getElementById('header-role-badge');
+    roleBadge.textContent = roleLabel;
+    roleBadge.className = 'header-role role-' + currentUserData.role;
+    if (currentUserData.status === 'pending') {
+      showScreen('pending-screen');
+    } else {
+      showRoleScreen();
+      if (currentUserData.role === 'fto') loadFtoSidebar();
+    }
+  }).catch(function() { showAuthScreen(); });
+}
 
-auth.onAuthStateChanged(function(user) {
-  if (user) {
-    currentUser = user;
-    db.collection('users').doc(user.uid).get().then(function(doc) {
-      if (!doc.exists) { auth.signOut(); return; }
-      currentUserData = doc.data();
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('app').style.display = 'flex';
-      document.getElementById('header-username').textContent = currentUserData.name;
-      var roleLabel = ROLE_LABELS[currentUserData.role] || currentUserData.role;
-      var roleBadge = document.getElementById('header-role-badge');
-      roleBadge.textContent = roleLabel;
-      roleBadge.className = 'header-role role-' + currentUserData.role;
-      if (currentUserData.status === 'pending') {
-        showScreen('pending-screen');
-      } else {
-        showRoleScreen();
-        if (currentUserData.role === 'fto') loadFtoSidebar();
-      }
-    });
-  } else {
-    currentUser = null; currentUserData = null;
-    document.getElementById('auth-screen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
+function showAuthScreen() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// Check existing session on load
+document.addEventListener('DOMContentLoaded', function() {
+  var uid = localStorage.getItem('lspd_uid');
+  if (uid) {
+    loadUserSession(uid);
   }
 });
 
