@@ -546,12 +546,14 @@ function loadPendingUsers() {
   db.collection('users').where('status','==','pending').onSnapshot(function(snap) {
     var el = document.getElementById('boss-pending-list');
     if (snap.empty) { el.innerHTML = '<span style="font-size:0.78rem;color:var(--text3);">אין בקשות ממתינות</span>'; return; }
-    el.innerHTML = snap.docs.map(function(doc) {
+    window._pendingIds = {};
+    el.innerHTML = snap.docs.map(function(doc, i) {
       var d = doc.data();
+      window._pendingIds['p'+i] = doc.id;
       return '<div class="user-row"><div class="user-info"><div class="u-name">'+d.name+'</div><div class="u-role">'+ROLE_LABELS[d.role]+'</div></div>'+
         '<div class="user-actions">'+
-        '<button class="ua-btn success" onclick="approveUser(&quot;"+doc.id+"&quot;)">אשר</button>'+
-        '<button class="ua-btn danger" onclick="rejectUser(&quot;"+doc.id+"&quot;)">דחה</button>'+
+        '<button class="ua-btn success" onclick="approveUser(window._pendingIds.p'+i+')">אשר</button>'+
+        '<button class="ua-btn danger" onclick="rejectUser(window._pendingIds.p'+i+')">דחה</button>'+
         '</div></div>';
     }).join('');
   });
@@ -569,7 +571,7 @@ function loadAllUsers() {
       var d = u.data;
       return '<div class="user-row"><div class="user-info"><div class="u-name">'+d.name+'</div><div class="u-role">'+(ROLE_LABELS[d.role]||d.role)+' • '+(d.status==='pending'?'⏳ ממתין':'✅ פעיל')+(d.isAdmin?' • 👑 מנהל':'')+'</div></div>'+
         '<div class="user-actions">'+
-        '<button class="ua-btn danger" onclick="deleteUser(&quot;"+u.id+"&quot;)">🗑️</button>'+
+        '<button class="ua-btn danger" data-i="'+i+'" onclick="deleteUser(window._userIds[this.getAttribute(\"data-i\")])">🗑️</button>'+
         '</div></div>';
     }).join('');
     // Update selects
