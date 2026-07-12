@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Los Santos Police</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0d0f;
+  --surface: #16161a;
+  --surface2: #1e1e24;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0f0f2;
+  --text2: #a0a0b0;
+  --text3: #606070;
+  --accent: #4f8ef7;
+  --accent2: #3a7ae0;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --gold: #e2b96f;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+
+/* Auth screen */
+#auth-screen {
+  display: flex; align-items: center; justify-content: center;
+  height: 100vh; background: var(--bg);
+  background-image: radial-gradient(ellipse at 30% 20%, rgba(79,142,247,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(79,142,247,0.04) 0%, transparent 60%);
+}
+.auth-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 40px; width: 400px; max-width: 95vw;
+}
+.auth-logo { text-align: center; margin-bottom: 28px; }
+.auth-logo .shield { font-size: 2.5rem; margin-bottom: 8px; }
+.auth-logo h1 { font-family: 'Rajdhani', sans-serif; font-size: 1.6rem; font-weight: 700; letter-spacing: 3px; color: var(--text); }
+.auth-logo p { font-size: 0.75rem; color: var(--text3); letter-spacing: 2px; margin-top: 4px; }
+
+/* Role picker */
+.role-picker { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.role-opt {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg); border: 1px solid var(--border2); border-radius: 10px;
+  padding: 12px 14px; cursor: pointer; transition: all 0.2s;
+}
+.role-opt:hover { border-color: var(--accent); }
+.role-opt.selected { border-color: var(--accent); background: rgba(79,142,247,0.08); }
+.role-opt .r-icon { font-size: 1.4rem; }
+.role-opt .r-txt { display: flex; flex-direction: column; }
+.role-opt .r-name { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+.role-opt .r-desc { font-size: 0.7rem; color: var(--text3); margin-top: 2px; }
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 0.75rem; font-weight: 500; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.5px; }
+.field input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 10px 14px; color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 0.85rem; outline: none; transition: border-color 0.2s;
+}
+.field input:focus { border-color: var(--accent); }
+.btn-primary {
+  width: 100%; background: var(--accent); border: none; border-radius: 8px;
+  padding: 11px; color: #fff; font-family: 'Inter', sans-serif; font-weight: 600;
+  font-size: 0.88rem; cursor: pointer; transition: all 0.2s; margin-top: 4px;
+}
+.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+.auth-error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 7px; padding: 10px 14px; font-size: 0.78rem; color: var(--danger); margin-bottom: 14px; display: none; }
+
+/* Main app */
+#app { display: none; flex-direction: column; height: 100vh; }
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 56px; background: var(--surface);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.header-logo { font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: 3px; color: var(--text); }
+.header-logo span { color: var(--accent); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-role { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 10px; }
+.role-cadet { background: rgba(56,189,248,0.15); color: #38bdf8; }
+.role-fto { background: rgba(165,148,249,0.15); color: #a594f9; }
+.role-command { background: rgba(251,191,36,0.15); color: var(--warning); }
+.btn-logout { background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 4px 12px; color: var(--text2); font-size: 0.75rem; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+/* Content */
+#content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+/* Category screen */
+#role-screen {
+  display: none; align-items: center; justify-content: center;
+  flex: 1; flex-direction: column;
+  background-image: radial-gradient(ellipse at 50% 30%, rgba(79,142,247,0.05) 0%, transparent 60%);
+  position: relative; overflow: hidden;
+}
+#role-screen::before { content: '🛡️'; position: absolute; font-size: 400px; opacity: 0.02; top: 50%; left: 50%; transform: translate(-50%,-55%); pointer-events: none; }
+.role-title { text-align: center; margin-bottom: 32px; position: relative; z-index: 1; }
+.role-title p { font-size: 0.72rem; color: var(--text3); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+.role-title h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--text); }
+.role-divider { width: 48px; height: 1px; background: linear-gradient(90deg,transparent,var(--accent),transparent); margin: 12px auto 32px; }
+.cards-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; position: relative; z-index: 1; max-width: 900px; }
+.portal-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 28px 24px; width: 180px; text-align: center;
+  cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden;
+}
+.portal-card::after { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; background: radial-gradient(ellipse at 50% 0%, var(--card-glow, rgba(79,142,247,0.15)), transparent 70%); }
+.portal-card:hover { transform: translateY(-3px); border-color: var(--card-color, var(--accent)); box-shadow: 0 0 20px var(--card-glow, rgba(79,142,247,0.2)); }
+.portal-card:hover::after { opacity: 1; }
+.portal-card .ci { font-size: 2.4rem; margin-bottom: 12px; display: block; transition: transform 0.2s; }
+.portal-card:hover .ci { transform: scale(1.1); }
+.portal-card .cn { font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: 1px; }
+.portal-card .cd { font-size: 0.68rem; color: var(--text3); margin-top: 5px; }
+
+/* Portal screen */
+#portal-screen { display: none; flex-direction: column; flex: 1; }
+.portal-topbar { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.portal-back { background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 5px 14px; color: var(--text2); font-size: 0.78rem; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.portal-back:hover { color: var(--text); }
+.portal-name { font-size: 0.82rem; color: var(--text3); }
+.portal-iframe { flex: 1; border: none; width: 100%; }
+
+/* Mouse glow */
+#glow-canvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; }
+</style>
+</head>
+<body>
+<canvas id="glow-canvas"></canvas>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="shield">🛡️</div>
+      <h1>LOS SANTOS PD</h1>
+      <p>PATROL UNIT</p>
+    </div>
+
+    <div id="auth-error" class="auth-error"></div>
+
+    <div class="role-picker">
+      <div class="role-opt" data-role="command" onclick="selectRole('command')">
+        <span class="r-icon">⭐</span>
+        <span class="r-txt"><span class="r-name">פיקוד</span><span class="r-desc">דורש סיסמה</span></span>
+      </div>
+      <div class="role-opt" data-role="fto" onclick="selectRole('fto')">
+        <span class="r-icon">🎓</span>
+        <span class="r-txt"><span class="r-name">FTO</span><span class="r-desc">דורש סיסמה</span></span>
+      </div>
+      <div class="role-opt" data-role="cadet" onclick="selectRole('cadet')">
+        <span class="r-icon">📘</span>
+        <span class="r-txt"><span class="r-name">קאדט</span><span class="r-desc">כניסה ללא סיסמה</span></span>
+      </div>
+    </div>
+
+    <div class="field" id="pw-field" style="display:none;">
+      <label>סיסמה</label>
+      <input type="password" id="l-password" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+
+    <button class="btn-primary" onclick="doLogin()">כניסה למערכת</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-logo">LOS <span>SANTOS</span> PD</div>
+    <div class="header-right">
+      <span class="header-role" id="header-role-badge"></span>
+      <button class="btn-logout" onclick="doLogout()">יציאה</button>
+    </div>
+  </header>
+
+  <div id="content">
+    <!-- Category screen -->
+    <div id="role-screen">
+      <div class="role-title">
+        <p>ברוך הבא</p>
+        <h2>בחר קטגוריה</h2>
+      </div>
+      <div class="role-divider"></div>
+      <div class="cards-grid" id="portal-cards"></div>
+    </div>
+
+    <!-- Portal -->
+    <div id="portal-screen">
+      <div class="portal-topbar">
+        <button class="portal-back" onclick="closePortal()">← חזור</button>
+        <span class="portal-name" id="portal-name"></span>
+      </div>
+      <iframe class="portal-iframe" id="portal-iframe" src=""></iframe>
+    </div>
+  </div>
+</div>
+
+<script>//<![CDATA[
+
+var BASE = 'https://harelmamaliak-dot.github.io/lspd-website/';
+
+var PASSWORDS   = { command: '2143', fto: '1010', cadet: null };
+var ROLE_LABELS = { command: 'פיקוד', fto: 'FTO', cadet: 'קאדט' };
+
+var PORTALS = {
+  cadet: [
+    { icon:'📖', name:'נהלים ובחינה', desc:'לימוד עצמי + בחינה אמריקאית', color:'#58a6ff', glow:'rgba(88,166,255,0.2)', file:'cadet_study.html' },
+    { icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' }
+  ],
+  fto: [
+    { icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
+    { icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
+    { icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' }
+  ],
+  command: [
+    { icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
+    { icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
+    { icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' },
+    { icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' },
+    { icon:'⏱️', name:'מחשבון מערכת שעות', desc:'lspd_tracker', color:'#38bdf8', glow:'rgba(56,189,248,0.2)', file:'lspd_tracker_v4_0.html' }
+  ]
+};
+
+var selectedRole = null;
+var currentRole  = null;
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function selectRole(role) {
+  selectedRole = role;
+  document.querySelectorAll('.role-opt').forEach(function(el) {
+    el.classList.toggle('selected', el.getAttribute('data-role') === role);
+  });
+  var needsPw = !!PASSWORDS[role];
+  document.getElementById('pw-field').style.display = needsPw ? 'block' : 'none';
+  document.getElementById('l-password').value = '';
+  document.getElementById('auth-error').style.display = 'none';
+  if (needsPw) document.getElementById('l-password').focus();
+}
+
+function showAuthError(msg) {
+  var el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function doLogin() {
+  if (!selectedRole) { showAuthError('בחר דרגה'); return; }
+  var needed = PASSWORDS[selectedRole];
+  if (needed) {
+    var pw = document.getElementById('l-password').value.trim();
+    if (!pw) { showAuthError('נא להזין סיסמה'); return; }
+    if (pw !== needed) { showAuthError('סיסמה שגויה'); return; }
+  }
+  localStorage.setItem('lspd_role', selectedRole);
+  enterApp(selectedRole);
+}
+
+function enterApp(role) {
+  currentRole = role;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  var badge = document.getElementById('header-role-badge');
+  badge.textContent = ROLE_LABELS[role] || role;
+  badge.className = 'header-role role-' + role;
+  showRoleScreen();
+}
+
+function doLogout() {
+  localStorage.removeItem('lspd_role');
+  currentRole = null;
+  selectedRole = null;
+  document.querySelectorAll('.role-opt').forEach(function(el){ el.classList.remove('selected'); });
+  document.getElementById('pw-field').style.display = 'none';
+  document.getElementById('l-password').value = '';
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('portal-iframe').src = '';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+// Restore session
+document.addEventListener('DOMContentLoaded', function() {
+  var role = localStorage.getItem('lspd_role');
+  if (role && PORTALS[role]) enterApp(role);
+});
+
+// ── SCREENS ───────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  ['role-screen','portal-screen'].forEach(function(s){
+    var el = document.getElementById(s);
+    el.style.display = 'none';
+    el.style.flexDirection = '';
+  });
+  var target = document.getElementById(id);
+  target.style.display = 'flex';
+  if (id !== 'portal-screen') target.style.flexDirection = 'column';
+}
+
+function showRoleScreen() {
+  showScreen('role-screen');
+  buildPortalCards();
+}
+
+function buildPortalCards() {
+  if (!currentRole) return;
+  var portals = PORTALS[currentRole] || [];
+  document.getElementById('portal-cards').innerHTML = portals.map(function(p) {
+    return '<div class="portal-card" style="--card-color:'+p.color+';--card-glow:'+p.glow+';" onclick="openPortal(this)" data-name="'+p.name+'" data-file="'+p.file+'">'+
+      '<span class="ci">'+p.icon+'</span>'+
+      '<div class="cn" style="color:'+p.color+'">'+p.name+'</div>'+
+      '<div class="cd">'+p.desc+'</div>'+
+      '</div>';
+  }).join('');
+}
+
+function openPortal(el) {
+  showScreen('portal-screen');
+  document.getElementById('portal-name').textContent = el.getAttribute('data-name');
+  document.getElementById('portal-iframe').src = BASE + el.getAttribute('data-file');
+}
+
+function closePortal() {
+  showRoleScreen();
+  document.getElementById('portal-iframe').src = '';
+}
+
+// ── MOUSE GLOW ────────────────────────────────────────────────────────────────
+(function() {
+  var c = document.getElementById('glow-canvas');
+  if (!c) return;
+  var x = c.getContext('2d'), mx = -500, my = -500;
+  function r(){ c.width = innerWidth; c.height = innerHeight; }
+  r(); addEventListener('resize', r);
+  addEventListener('mousemove', function(e){ mx = e.clientX; my = e.clientY; });
+  (function draw(){
+    x.clearRect(0,0,c.width,c.height);
+    var g = x.createRadialGradient(mx,my,0,mx,my,150);
+    g.addColorStop(0,'rgba(79,142,247,0.06)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle = g; x.fillRect(0,0,c.width,c.height);
+    requestAnimationFrame(draw);
+  })();
+})();
+
+//]]></script>
+</body>
+</html>
