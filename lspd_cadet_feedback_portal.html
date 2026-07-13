@@ -46,6 +46,41 @@
         .rating-btn.selected { background-color: #14b8a6; color: #020617; border-color: #14b8a6; font-weight: bold; }
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
     </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+// ── LSPD HISTORY LOGGER (shared) ─────────────────────────────────────────────
+(function(){
+  if (window.lspdLog) return;
+  var cfg = {
+    apiKey: "AIzaSyAMOihHnXa-j9X8dVSqRoREUauVd6Hh8TA",
+    authDomain: "pr-rp-polic.firebaseapp.com",
+    projectId: "pr-rp-polic",
+    storageBucket: "pr-rp-polic.firebasestorage.app",
+    messagingSenderId: "364977141598",
+    appId: "1:364977141598:web:861a4ff22fe8e6b28681cf"
+  };
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
+    var db = firebase.firestore();
+    window.lspdLog = function(type, data) {
+      try {
+        var rec = Object.assign({
+          type: type,
+          createdAt: new Date().toISOString(),
+          ts: Date.now()
+        }, data || {});
+        return db.collection('submissions').add(rec).catch(function(e){
+          console.warn('[lspd history] save failed:', e.message);
+        });
+      } catch(e) { console.warn('[lspd history]', e); }
+    };
+  } catch(e) {
+    window.lspdLog = function(){}; // fail-safe: never break submission
+    console.warn('[lspd history] firebase unavailable', e);
+  }
+})();
+</script>
 </head>
 <body class="min-h-screen pb-24">
 
@@ -959,6 +994,14 @@
                 });
                 
                 if (response.ok || response.status === 204) {
+                    lspdLog('cadet_feedback', {
+                        subject: document.getElementById('fto-name').value,
+                        examiner: document.getElementById('cadet-name').value,
+                        score: calculateHiddenFtoScore(),
+                        maxScore: 100,
+                        passed: calculateHiddenFtoScore() >= 70,
+                        examDate: document.getElementById('evaluation-date') ? document.getElementById('evaluation-date').value : ''
+                    });
                     document.getElementById('success-modal').classList.remove('hidden');
                 } else { throw new Error('Network error'); }
             } catch (error) {

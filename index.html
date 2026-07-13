@@ -127,7 +127,51 @@ header {
 
 /* Mouse glow */
 #glow-canvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; }
+
+/* ── History screen ── */
+#history-screen { display:none; flex-direction:column; flex:1; overflow:hidden; }
+.hist-controls { display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:16px 24px 12px; border-bottom:1px solid var(--border); }
+.hist-tabs { display:flex; gap:6px; flex-wrap:wrap; flex:1; }
+.hist-tab { background:var(--surface); border:1px solid var(--border); color:var(--text3);
+  border-radius:7px; padding:7px 12px; font-family:'Inter',sans-serif; font-size:0.76rem;
+  cursor:pointer; transition:all .18s; white-space:nowrap; }
+.hist-tab:hover { color:var(--text2); border-color:var(--accent); }
+.hist-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+.hist-search { background:var(--surface); border:1px solid var(--border); border-radius:7px;
+  padding:8px 12px; color:var(--text); font-family:'Inter',sans-serif; font-size:0.8rem;
+  min-width:200px; outline:none; }
+.hist-search:focus { border-color:var(--accent); }
+.hist-stats { display:flex; gap:10px; padding:12px 24px; flex-wrap:wrap; }
+.hist-stat { background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:8px 14px; display:flex; align-items:center; gap:8px; }
+.hist-stat .hs-n { font-family:'Rajdhani',sans-serif; font-size:1.15rem; font-weight:700; color:var(--text); }
+.hist-stat .hs-l { font-size:0.68rem; color:var(--text3); letter-spacing:1px; text-transform:uppercase; }
+.hist-body { flex:1; overflow-y:auto; padding:4px 24px 24px; }
+.hist-row { display:flex; align-items:center; gap:14px; background:var(--surface);
+  border:1px solid var(--border); border-radius:9px; padding:12px 16px; margin-bottom:8px;
+  transition:border-color .18s; }
+.hist-row:hover { border-color:var(--accent); }
+.hist-row .hr-type { font-size:1.15rem; width:26px; text-align:center; flex-shrink:0; }
+.hist-row .hr-main { flex:1; min-width:0; text-align:right; }
+.hist-row .hr-name { font-weight:700; font-size:0.9rem; color:var(--text);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hist-row .hr-meta { font-size:0.72rem; color:var(--text3); margin-top:3px; }
+.hist-row .hr-score { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:1.15rem;
+  min-width:56px; text-align:center; flex-shrink:0; }
+.hist-row .hr-badge { font-size:0.7rem; font-weight:700; padding:4px 10px; border-radius:20px; flex-shrink:0; }
+.hr-pass { background:rgba(52,211,153,0.14); color:#34d399; }
+.hr-fail { background:rgba(248,113,113,0.14); color:#f87171; }
+.hist-empty { text-align:center; color:var(--text3); font-size:0.85rem; padding:48px 20px; }
+.hist-date { font-size:0.7rem; color:var(--text3); white-space:nowrap; flex-shrink:0; }
+@media (max-width:640px){
+  .hist-row .hr-date, .hist-row .hr-meta { display:none; }
+  .hist-controls { padding:12px 14px; }
+  .hist-body { padding:4px 14px 20px; }
+}
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <canvas id="glow-canvas"></canvas>
@@ -196,6 +240,30 @@ header {
       </div>
       <iframe class="portal-iframe" id="portal-iframe" src=""></iframe>
     </div>
+
+    <!-- History (command only) -->
+    <div id="history-screen">
+      <div class="portal-topbar">
+        <button class="portal-back" onclick="showRoleScreen()">← חזור</button>
+        <span class="portal-name">📊 היסטוריית הגשות</span>
+      </div>
+
+      <div class="hist-controls">
+        <div class="hist-tabs" id="hist-tabs">
+          <button class="hist-tab active" data-t="all" onclick="setHistType('all')">הכל</button>
+          <button class="hist-tab" data-t="prrp_pd" onclick="setHistType('prrp_pd')">📚 מבחן נהלים</button>
+          <button class="hist-tab" data-t="fto_exam" onclick="setHistType('fto_exam')">🏅 מבחן הסמכה</button>
+          <button class="hist-tab" data-t="fto_eval" onclick="setHistType('fto_eval')">📝 הערכת קאדט</button>
+          <button class="hist-tab" data-t="cadet_feedback" onclick="setHistType('cadet_feedback')">📋 הערכת FTO</button>
+        </div>
+        <input type="text" id="hist-search" class="hist-search" placeholder="🔍 חפש לפי שם..." oninput="renderHistory()" />
+      </div>
+
+      <div class="hist-stats" id="hist-stats"></div>
+      <div class="hist-body" id="hist-body">
+        <div class="hist-empty">טוען נתונים...</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -221,9 +289,36 @@ var PORTALS = {
     { icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
     { icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' },
     { icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' },
-    { icon:'⏱️', name:'מחשבון מערכת שעות', desc:'lspd_tracker', color:'#38bdf8', glow:'rgba(56,189,248,0.2)', file:'lspd_tracker_v4_0.html' }
+    { icon:'⏱️', name:'מחשבון מערכת שעות', desc:'lspd_tracker', color:'#38bdf8', glow:'rgba(56,189,248,0.2)', file:'lspd_tracker_v4_0.html' },
+    { id:'history', icon:'📊', name:'היסטוריית הגשות', desc:'כל המבחנים והדוחות', color:'#e2b96f', glow:'rgba(226,185,111,0.2)', file:null }
   ]
 };
+
+// ── FIREBASE ──────────────────────────────────────────────────────────────────
+var firebaseConfig = {
+  apiKey: "AIzaSyAMOihHnXa-j9X8dVSqRoREUauVd6Hh8TA",
+  authDomain: "pr-rp-polic.firebaseapp.com",
+  projectId: "pr-rp-polic",
+  storageBucket: "pr-rp-polic.firebasestorage.app",
+  messagingSenderId: "364977141598",
+  appId: "1:364977141598:web:861a4ff22fe8e6b28681cf"
+};
+var db = null;
+try {
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+} catch(e) { console.warn('firebase init failed', e); }
+
+var TYPE_META = {
+  prrp_pd:        { icon:'📚', label:'מבחן נהלים',     subjLabel:'נבחן',  byLabel:'בוחן' },
+  fto_exam:       { icon:'🏅', label:'מבחן הסמכה FTO', subjLabel:'מועמד', byLabel:'בוחן' },
+  fto_eval:       { icon:'📝', label:'הערכת קאדט',     subjLabel:'קאדט',  byLabel:'FTO' },
+  cadet_feedback: { icon:'📋', label:'הערכת FTO',      subjLabel:'FTO',   byLabel:'קאדט' }
+};
+
+var histData = [];
+var histType = 'all';
+var histLoaded = false;
 
 var selectedRole = null;
 var currentRole  = null;
@@ -290,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── SCREENS ───────────────────────────────────────────────────────────────────
 function showScreen(id) {
-  ['role-screen','portal-screen'].forEach(function(s){
+  ['role-screen','portal-screen','history-screen'].forEach(function(s){
     var el = document.getElementById(s);
     el.style.display = 'none';
     el.style.flexDirection = '';
@@ -309,7 +404,7 @@ function buildPortalCards() {
   if (!currentRole) return;
   var portals = PORTALS[currentRole] || [];
   document.getElementById('portal-cards').innerHTML = portals.map(function(p) {
-    return '<div class="portal-card" style="--card-color:'+p.color+';--card-glow:'+p.glow+';" onclick="openPortal(this)" data-name="'+p.name+'" data-file="'+p.file+'">'+
+    return '<div class="portal-card" style="--card-color:'+p.color+';--card-glow:'+p.glow+';" onclick="openPortal(this)" data-id="'+(p.id||'')+'" data-name="'+p.name+'" data-file="'+(p.file||'')+'">'+
       '<span class="ci">'+p.icon+'</span>'+
       '<div class="cn" style="color:'+p.color+'">'+p.name+'</div>'+
       '<div class="cd">'+p.desc+'</div>'+
@@ -318,9 +413,113 @@ function buildPortalCards() {
 }
 
 function openPortal(el) {
+  var id = el.getAttribute('data-id');
+  var name = el.getAttribute('data-name');
+  var file = el.getAttribute('data-file');
+
+  if (id === 'history') {
+    if (currentRole !== 'command') return;
+    openHistory();
+    return;
+  }
+
   showScreen('portal-screen');
-  document.getElementById('portal-name').textContent = el.getAttribute('data-name');
-  document.getElementById('portal-iframe').src = BASE + el.getAttribute('data-file');
+  document.getElementById('portal-name').textContent = name;
+  document.getElementById('portal-iframe').src = BASE + file;
+}
+
+// ── HISTORY (command only) ────────────────────────────────────────────────────
+function openHistory() {
+  showScreen('history-screen');
+  if (histLoaded) { renderHistory(); return; }
+
+  if (!db) {
+    document.getElementById('hist-body').innerHTML =
+      '<div class="hist-empty">⚠️ אין חיבור למסד הנתונים.</div>';
+    return;
+  }
+
+  db.collection('submissions').orderBy('ts', 'desc').limit(500)
+    .onSnapshot(function(snap) {
+      histData = [];
+      snap.forEach(function(doc) { histData.push(doc.data()); });
+      histLoaded = true;
+      renderHistory();
+    }, function(err) {
+      document.getElementById('hist-body').innerHTML =
+        '<div class="hist-empty">⚠️ שגיאה בטעינה: ' + err.message + '</div>';
+    });
+}
+
+function setHistType(t) {
+  histType = t;
+  document.querySelectorAll('.hist-tab').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-t') === t);
+  });
+  renderHistory();
+}
+
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"]/g, function(c) {
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
+  });
+}
+
+function renderHistory() {
+  var q = (document.getElementById('hist-search').value || '').trim().toLowerCase();
+
+  var rows = histData.filter(function(r) {
+    if (histType !== 'all' && r.type !== histType) return false;
+    if (!q) return true;
+    return (String(r.subject || '').toLowerCase().indexOf(q) !== -1) ||
+           (String(r.examiner || '').toLowerCase().indexOf(q) !== -1);
+  });
+
+  // Stats
+  var total = rows.length;
+  var passed = rows.filter(function(r) { return r.passed; }).length;
+  var avg = total ? Math.round(rows.reduce(function(a, r) {
+    return a + (Number(r.score) || 0);
+  }, 0) / total) : 0;
+
+  document.getElementById('hist-stats').innerHTML =
+    '<div class="hist-stat"><span class="hs-n">' + total + '</span><span class="hs-l">הגשות</span></div>' +
+    '<div class="hist-stat"><span class="hs-n" style="color:#34d399">' + passed + '</span><span class="hs-l">עברו</span></div>' +
+    '<div class="hist-stat"><span class="hs-n" style="color:#f87171">' + (total - passed) + '</span><span class="hs-l">נכשלו</span></div>' +
+    '<div class="hist-stat"><span class="hs-n">' + avg + '%</span><span class="hs-l">ממוצע</span></div>';
+
+  var body = document.getElementById('hist-body');
+  if (!rows.length) {
+    body.innerHTML = '<div class="hist-empty">' +
+      (histData.length ? 'לא נמצאו תוצאות מתאימות' : 'עדיין אין הגשות. דוחות חדשים יופיעו כאן אוטומטית.') +
+      '</div>';
+    return;
+  }
+
+  body.innerHTML = rows.map(function(r) {
+    var m = TYPE_META[r.type] || { icon:'📄', label:r.type||'', subjLabel:'שם', byLabel:'מגיש' };
+    var sc = Number(r.score) || 0;
+    var col = r.passed ? '#34d399' : '#f87171';
+    var d = '';
+    try {
+      d = new Date(r.createdAt).toLocaleString('he-IL', {
+        day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'
+      });
+    } catch(e) {}
+
+    return '<div class="hist-row">' +
+      '<span class="hr-type" title="' + esc(m.label) + '">' + m.icon + '</span>' +
+      '<div class="hr-main">' +
+        '<div class="hr-name">' + esc(r.subject || '—') + '</div>' +
+        '<div class="hr-meta">' + esc(m.label) +
+          (r.examiner ? ' • ' + esc(m.byLabel) + ': ' + esc(r.examiner) : '') + '</div>' +
+      '</div>' +
+      '<span class="hist-date hr-date">' + esc(d) + '</span>' +
+      '<span class="hr-score" style="color:' + col + '">' + sc + '%</span>' +
+      '<span class="hr-badge ' + (r.passed ? 'hr-pass' : 'hr-fail') + '">' +
+        (r.passed ? '✅ עבר' : '❌ נכשל') + '</span>' +
+    '</div>';
+  }).join('');
 }
 
 function closePortal() {
