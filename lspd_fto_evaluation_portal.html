@@ -1041,7 +1041,27 @@
                         maxScore: 100,
                         passed: finalScore >= 70,
                         phase: document.getElementById('training-phase') ? document.getElementById('training-phase').value : '',
-                        examDate: document.getElementById('evaluation-date') ? document.getElementById('evaluation-date').value : ''
+                        examDate: document.getElementById('evaluation-date') ? document.getElementById('evaluation-date').value : '',
+                        metrics: (function(){
+                            var names = ['הפגנת סמכותיות','שינוי פאזה','קשר ודיווח','טקטיקה ובטיחות','שימוש בסמכויות'];
+                            var out = [];
+                            for (var i=1; i<=5; i++) {
+                                var el = document.querySelector('input[name="metric-'+i+'"]:checked');
+                                out.push({ name: names[i-1], value: el ? el.value + " נק'" : '—' });
+                            }
+                            var rNames = ['מבחן המשחק','הקשבה אקטיבית','ניהול מתח וטונים','עבודה עם שותף'];
+                            for (var j=1; j<=4; j++) {
+                                out.push({ name: rNames[j-1], value: (activeRatings[j] != null ? activeRatings[j] + '/5' : '—') });
+                            }
+                            return out;
+                        })(),
+                        texts: [
+                            { name: 'הערכה כללית', value: document.getElementById('general-eval').value },
+                            { name: 'התנהגות', value: document.getElementById('behavior-eval').value },
+                            { name: 'אירוע 1: ' + document.getElementById('event-title-1').value, value: document.getElementById('event-desc-1').value },
+                            { name: 'אירוע 2: ' + document.getElementById('event-title-2').value, value: document.getElementById('event-desc-2').value },
+                            { name: 'אירוע 3: ' + document.getElementById('event-title-3').value, value: document.getElementById('event-desc-3').value }
+                        ].filter(function(t){ return t.value && t.value.trim(); })
                     });
                     document.getElementById('final-score-display').innerText = `${finalScore} / 100`;
                     document.getElementById('success-modal').classList.remove('hidden');

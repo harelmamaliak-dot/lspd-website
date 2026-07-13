@@ -1002,7 +1002,31 @@
                         score: totalScore,
                         maxScore: 100,
                         passed: !!isPass,
-                        examDate: localStorage.getItem('lspd_exam_date') || ''
+                        examDate: localStorage.getItem('lspd_exam_date') || '',
+                        timeTaken: timeTakenFormatted,
+                        questions: QUESTIONS.map(function(q) {
+                            const ans = userAnswers[q.number];
+                            const earned = gradingDetails[q.number] || 0;
+                            let givenText = ans || '';
+                            let correctText = '';
+                            if (q.type === 'american') {
+                                const chosen = (q.options || []).find(function(o){ return o.id === ans; });
+                                const right  = (q.options || []).find(function(o){ return o.id === q.correct; });
+                                givenText   = ans ? (ans + '. ' + (chosen ? chosen.text : '')) : 'לא נענה';
+                                correctText = q.correct + '. ' + (right ? right.text : '');
+                            }
+                            return {
+                                number: q.number,
+                                type: q.type,
+                                question: q.title || ('שאלה ' + q.number),
+                                desc: q.desc || '',
+                                given: givenText,
+                                correct: correctText,
+                                points: earned,
+                                maxPoints: q.points,
+                                ok: earned >= q.points
+                            };
+                        })
                     });
                     triggerSuccessScreen(totalScore, isPass, timeTakenFormatted);
                 } else throw new Error('Network error');

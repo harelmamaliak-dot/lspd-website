@@ -997,10 +997,35 @@
                     lspdLog('cadet_feedback', {
                         subject: document.getElementById('fto-name').value,
                         examiner: document.getElementById('cadet-name').value,
-                        score: calculateHiddenFtoScore(),
+                        score: finalFtoScore,
                         maxScore: 100,
-                        passed: calculateHiddenFtoScore() >= 70,
-                        examDate: document.getElementById('evaluation-date') ? document.getElementById('evaluation-date').value : ''
+                        passed: finalFtoScore >= 70,
+                        phase: document.getElementById('training-phase') ? document.getElementById('training-phase').value : '',
+                        examDate: document.getElementById('evaluation-date') ? document.getElementById('evaluation-date').value : '',
+                        metrics: (function(){
+                            var out = [
+                                { name: 'מוכנות תפעולית', value: opReadiness },
+                                { name: 'מוכנות בחוקים ונהלים', value: lawsReadiness },
+                                { name: 'מוכנות כללית', value: readinessVal }
+                            ];
+                            var mNames = ['מקצועיות המדריך','סבלנות והקשבה','בהירות ההסבר','זמינות ומענה','יחס אישי'];
+                            for (var i=1; i<=5; i++) {
+                                var el = document.querySelector('input[name="metric-'+i+'"]:checked');
+                                out.push({ name: mNames[i-1], value: el ? el.value : '—' });
+                            }
+                            var rNames = ['חשיבה עצמאית','ביטחון עצמי','הבנת נהלים','תקשורת','עבודת צוות','מוכנות למשמרת'];
+                            for (var j=1; j<=6; j++) {
+                                out.push({ name: rNames[j-1], value: (activeRatings[j] != null ? activeRatings[j] + '/5' : '—') });
+                            }
+                            return out;
+                        })(),
+                        texts: [
+                            { name: 'לשמר – מקצועי',  value: document.getElementById('eval-keep-prof').value },
+                            { name: 'לשמר – אישי',    value: document.getElementById('eval-keep-pers').value },
+                            { name: 'לשפר – מקצועי',  value: document.getElementById('eval-improve-prof').value },
+                            { name: 'לשפר – אישי',    value: document.getElementById('eval-improve-pers').value },
+                            { name: 'סביבת ההדרכה',   value: document.getElementById('eval-env').value }
+                        ].filter(function(t){ return t.value && t.value.trim(); })
                     });
                     document.getElementById('success-modal').classList.remove('hidden');
                 } else { throw new Error('Network error'); }

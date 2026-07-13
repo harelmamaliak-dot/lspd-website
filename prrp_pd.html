@@ -700,6 +700,27 @@
             location.reload(); 
         }
 
+        // Build full per-question breakdown for history
+        function buildPrrpDetails() {
+            const SCORE_LABEL = { v: 'עבר', vx: 'חלקי', x: 'נכשל' };
+            return EXAM_SECTIONS.map(function(section) {
+                return {
+                    title: section.title,
+                    items: (section.questions || []).map(function(q) {
+                        const d = examData[q.id] || {};
+                        return {
+                            text: q.label || q.id,
+                            weight: q.weight || 0,
+                            score: d.score || null,
+                            scoreLabel: d.score ? (SCORE_LABEL[d.score] || d.score) : 'לא סומן',
+                            note: (d.note || '').trim(),
+                            critical: String(q.id).startsWith('fire_')
+                        };
+                    })
+                };
+            });
+        }
+
         // ARCHIVE SYSTEM
         function saveToArchive(testee, score, isPass) {
             let history = JSON.parse(localStorage.getItem('lspd_archive') || '[]');
@@ -1481,7 +1502,9 @@
                         examiner: localStorage.getItem('lspd_examiner_name') || '',
                         score: results.percentage,
                         maxScore: 100,
-                        passed: !!results.isPass
+                        passed: !!results.isPass,
+                        criticalFail: !!results.autoCriticalFail,
+                        sections: buildPrrpDetails()
                     });
                 } else {
                     const errText = await response.text();
