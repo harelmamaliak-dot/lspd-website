@@ -443,6 +443,48 @@
             }
         ];
 
+        // --- ANSWER SHUFFLING ---
+        // Every correct answer in the database is "A". Without shuffling, a trainee
+        // could pass by always picking A. This randomises the option order on every
+        // page load and rewrites the letters so the correct answer lands anywhere.
+        //
+        // IMPORTANT: opt.id is used as BOTH the display letter and the stored answer
+        // value (grading does `ans === q.correct`). So we must not just reorder the
+        // array - we must reassign the letters A..D by their new position and update
+        // q.correct to wherever the right answer ended up. Everything downstream
+        // (grading, review screen, Discord report) reads from q.options / q.correct,
+        // so once these two are consistent, the whole exam stays correct.
+        function shuffleExamAnswers() {
+            const LETTERS = ["A", "B", "C", "D", "E", "F"];
+
+            QUESTIONS.forEach(function (q) {
+                if (q.type !== "american" || !Array.isArray(q.options)) return;
+
+                // Remember WHICH option is the right one, by object identity -
+                // not by letter, because the letter is about to change.
+                const correctOption = q.options.find(function (o) { return o.id === q.correct; });
+                if (!correctOption) return; // malformed question - leave it alone
+
+                // Fisher-Yates: unbiased shuffle (unlike sort(() => Math.random()-0.5))
+                const arr = q.options.slice();
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+                }
+
+                // Reassign letters by NEW position: first item becomes A, second B, ...
+                arr.forEach(function (opt, idx) {
+                    opt.id = LETTERS[idx];
+                });
+
+                // The correct answer now carries whatever letter it landed on.
+                q.options = arr;
+                q.correct = correctOption.id;
+            });
+        }
+
+        shuffleExamAnswers();
+
         let examActive = false;
         let viewMode = 'wizard';
         let currentQuestionIndex = 0;
