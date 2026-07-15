@@ -300,6 +300,27 @@ header {
 .myr-switch { display:block; margin:14px auto 0; background:transparent; border:none;
   color:var(--text3); font-size:0.76rem; cursor:pointer; }
 .myr-switch:hover { color:var(--text2); }
+
+/* ── Roster (v2: FTO-only, free-text cadets) ── */
+.roster-topbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:20px; }
+.name-add-wide { flex:1; min-width:240px; }
+.roster-count { font-size:0.76rem; color:var(--text3); background:var(--surface);
+  border:1px solid var(--border); border-radius:20px; padding:5px 12px; }
+.fto-name-edit { background:transparent; border:1px solid transparent; border-radius:6px;
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.95rem; color:var(--text);
+  padding:4px 6px; width:100%; text-align:right; outline:none; }
+.fto-name-edit:hover { border-color:var(--border); background:var(--bg2,#0f1621); }
+.fto-name-edit:focus { border-color:var(--accent); background:var(--bg2,#0f1621); }
+.fto-del { background:transparent; border:none; color:var(--text3); cursor:pointer;
+  font-size:0.7rem; padding:0; }
+.fto-del:hover { color:#f87171; }
+.slot-input { display:inline-flex; align-items:center; gap:4px; }
+.slot-input input { background:var(--bg2,#0f1621); border:1px solid var(--border); border-radius:20px;
+  padding:6px 12px; color:var(--text); font-size:0.8rem; outline:none; width:140px; }
+.slot-input input:focus { border-color:var(--accent); }
+.slot-go { background:var(--accent); border:none; color:#fff; width:26px; height:26px;
+  border-radius:50%; font-size:1rem; line-height:1; cursor:pointer; flex-shrink:0; }
+.slot-go:hover { filter:brightness(1.1); }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -816,15 +837,13 @@ function openDetail(idx) {
 
 // ── ROSTER ────────────────────────────────────────────────────────────────────
 var MAX_PER_FTO = 2;
-var rosterData = { ftos: [], cadets: [], assignments: {} };
+var rosterData = { ftos: [], assignments: {} };
 var rosterBound = false;
-var openPickerFor = null;
 
 function rosterNormalize(d) {
   d = d || {};
   return {
     ftos: Array.isArray(d.ftos) ? d.ftos : [],
-    cadets: Array.isArray(d.cadets) ? d.cadets : [],
     assignments: (d.assignments && typeof d.assignments === 'object') ? d.assignments : {}
   };
 }
@@ -855,27 +874,16 @@ function saveRoster() {
   });
 }
 
-// clean assignments: drop unknown ftos/cadets, cap at MAX
+// clean assignments: drop unknown ftos, cap at MAX
 function cleanAssignments() {
   var a = {};
   rosterData.ftos.forEach(function(f) {
-    var list = (rosterData.assignments[f] || []).filter(function(c) {
-      return rosterData.cadets.indexOf(c) !== -1;
-    });
-    a[f] = list.slice(0, MAX_PER_FTO);
+    a[f] = (rosterData.assignments[f] || []).slice(0, MAX_PER_FTO);
   });
   rosterData.assignments = a;
 }
 
-function cadetAssignedTo(cadet) {
-  var found = null;
-  Object.keys(rosterData.assignments).forEach(function(f) {
-    if ((rosterData.assignments[f] || []).indexOf(cadet) !== -1) found = f;
-  });
-  return found;
-}
-
-// ---- Command edit view ----
+// ---- Roster views ----
 function openRoster() { openRosterView(true); }
 function openMyRoster() { openRosterView(false); }
 
@@ -899,8 +907,7 @@ function renderRoster() {
   var d = rosterData;
   var body = document.getElementById('roster-body');
 
-  // Assignment table (both views)
-  var assignRows = d.ftos.length ? d.ftos.map(function(f) {
+  var assignRows = d.ftos.length ? d.ftos.map(function(f, i) {
     var slots = d.assignments[f] || [];
     var slotHtml = slots.map(function(c) {
       return '<span class="slot">' + esc(c) +
@@ -909,52 +916,42 @@ function renderRoster() {
     }).join('');
     if (editable) {
       if (slots.length < MAX_PER_FTO) {
-        slotHtml += '<div class="assign-picker">' +
-          '<button class="slot-add" onclick="togglePicker(\'' + jsq(f) + '\')">+ שבץ חניך</button>' +
-          (openPickerFor === f ? pickerMenu(f) : '') + '</div>';
+        slotHtml += '<span class="slot-input"><input id="cadet-in-' + i + '" placeholder="שם חניך…" ' +
+          'onkeydown="if(event.key===\'Enter\')assign(\'' + jsq(f) + '\',' + i + ')"' +
+          '><button class="slot-go" onclick="assign(\'' + jsq(f) + '\',' + i + ')">+</button></span>';
       } else {
         slotHtml += '<span class="slot-full">מלא (' + MAX_PER_FTO + ')</span>';
       }
     } else if (!slots.length) {
       slotHtml = '<span class="slot-full">— אין שיבוץ —</span>';
     }
+
+    var ftoNameHtml = editable
+      ? '<input class="fto-name-edit" value="' + esc(f) + '" ' +
+        'onchange="renameFto(\'' + jsq(f) + '\', this.value)" ' +
+        'onkeydown="if(event.key===\'Enter\')this.blur()">'
+      : '<div class="afn">🎖️ ' + esc(f) + '</div>';
+
     return '<div class="assign-row">' +
-      '<div class="assign-fto"><div class="afn">🎖️ ' + esc(f) + '</div>' +
-      '<div class="afc">' + slots.length + ' מתוך ' + MAX_PER_FTO + ' חניכים</div></div>' +
+      '<div class="assign-fto">' + ftoNameHtml +
+        '<div class="afc">' + slots.length + ' מתוך ' + MAX_PER_FTO + ' חניכים' +
+        (editable ? ' · <button class="fto-del" onclick="removeFto(\'' + jsq(f) + '\')">🗑 הסר מדריך</button>' : '') +
+        '</div>' +
+      '</div>' +
       '<div class="assign-slots">' + slotHtml + '</div></div>';
   }).join('') : '<div class="roster-empty-col">' +
       (editable ? 'הוסף מדריכים כדי להתחיל לשבץ.' : 'הפיקוד עדיין לא הגדיר שיבוצים.') + '</div>';
 
   var html = '';
 
-  // Name-management columns — command only
   if (editable) {
-    var ftoList = d.ftos.length ? d.ftos.map(function(f) {
-      var n = (d.assignments[f] || []).length;
-      return '<div class="name-item"><span class="nm">' + esc(f) + '</span>' +
-        '<span class="badge2">' + n + '/' + MAX_PER_FTO + '</span>' +
-        '<button class="del" title="הסר" onclick="removeFto(\'' + jsq(f) + '\')">🗑</button></div>';
-    }).join('') : '<div class="roster-empty-col">אין מדריכים. הוסף למטה.</div>';
-
-    var cadetList = d.cadets.length ? d.cadets.map(function(c) {
-      var to = cadetAssignedTo(c);
-      return '<div class="name-item"><span class="nm">' + esc(c) + '</span>' +
-        (to ? '<span class="badge2">↔ ' + esc(to) + '</span>' : '<span class="badge2">לא משובץ</span>') +
-        '<button class="del" title="הסר" onclick="removeCadet(\'' + jsq(c) + '\')">🗑</button></div>';
-    }).join('') : '<div class="roster-empty-col">אין חניכים. הוסף למטה.</div>';
-
     html +=
-      '<div class="roster-grid">' +
-        '<div class="roster-col"><h3>🎖️ מדריכים (FTO)<span class="cnt">' + d.ftos.length + '</span></h3>' +
-          '<div class="name-list">' + ftoList + '</div>' +
-          '<div class="name-add"><input id="add-fto" placeholder="שם מדריך חדש…" ' +
-            'onkeydown="if(event.key===\'Enter\')addFto()"><button onclick="addFto()">הוסף</button></div>' +
+      '<div class="roster-topbar">' +
+        '<div class="name-add name-add-wide">' +
+          '<input id="add-fto" placeholder="שם מדריך חדש…" onkeydown="if(event.key===\'Enter\')addFto()">' +
+          '<button onclick="addFto()">+ הוסף מדריך</button>' +
         '</div>' +
-        '<div class="roster-col"><h3>🎓 חניכים (Cadets)<span class="cnt">' + d.cadets.length + '</span></h3>' +
-          '<div class="name-list">' + cadetList + '</div>' +
-          '<div class="name-add"><input id="add-cadet" placeholder="שם חניך חדש…" ' +
-            'onkeydown="if(event.key===\'Enter\')addCadet()"><button onclick="addCadet()">הוסף</button></div>' +
-        '</div>' +
+        '<span class="roster-count">' + d.ftos.length + ' מדריכים</span>' +
       '</div>';
   }
 
@@ -964,28 +961,6 @@ function renderRoster() {
 
   body.innerHTML = html;
 }
-
-function pickerMenu(fto) {
-  var avail = rosterData.cadets.filter(function(c) { return !cadetAssignedTo(c); });
-  var inner = avail.length ? avail.map(function(c) {
-    return '<button onclick="assign(\'' + jsq(fto) + '\',\'' + jsq(c) + '\')">' + esc(c) + '</button>';
-  }).join('') : '<div class="pk-empty">כל החניכים כבר משובצים</div>';
-  return '<div class="picker-menu">' + inner + '</div>';
-}
-
-function togglePicker(fto) {
-  openPickerFor = (openPickerFor === fto) ? null : fto;
-  renderRoster();
-}
-
-document.addEventListener('click', function(e) {
-  if (openPickerFor === null) return;
-  if (e.target.closest && e.target.closest('.assign-picker')) return;
-  openPickerFor = null;
-  if (document.getElementById('roster-screen').style.display !== 'none' && currentRole === 'command') {
-    renderRoster();
-  }
-});
 
 function jsq(v) { return String(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
@@ -998,37 +973,37 @@ function addFto() {
   if (!rosterData.assignments[v]) rosterData.assignments[v] = [];
   saveRoster(); renderRoster();
 }
-function addCadet() {
-  var el = document.getElementById('add-cadet');
-  var v = (el.value || '').trim();
-  if (!v) return;
-  if (rosterData.cadets.indexOf(v) !== -1) { el.value=''; return; }
-  rosterData.cadets.push(v);
+
+function renameFto(oldName, newName) {
+  newName = (newName || '').trim();
+  if (!newName || newName === oldName) { renderRoster(); return; }
+  if (rosterData.ftos.indexOf(newName) !== -1) {
+    alert('כבר קיים מדריך בשם הזה.');
+    renderRoster(); return;
+  }
+  rosterData.ftos = rosterData.ftos.map(function(x){ return x === oldName ? newName : x; });
+  rosterData.assignments[newName] = rosterData.assignments[oldName] || [];
+  if (oldName !== newName) delete rosterData.assignments[oldName];
   saveRoster(); renderRoster();
 }
+
 function removeFto(f) {
   if (!confirm('להסיר את המדריך "' + f + '"? השיבוצים שלו יימחקו.')) return;
   rosterData.ftos = rosterData.ftos.filter(function(x){ return x !== f; });
   delete rosterData.assignments[f];
-  if (openPickerFor === f) openPickerFor = null;
   saveRoster(); renderRoster();
 }
-function removeCadet(c) {
-  if (!confirm('להסיר את החניך "' + c + '"?')) return;
-  rosterData.cadets = rosterData.cadets.filter(function(x){ return x !== c; });
-  Object.keys(rosterData.assignments).forEach(function(f) {
-    rosterData.assignments[f] = (rosterData.assignments[f]||[]).filter(function(x){ return x !== c; });
-  });
-  saveRoster(); renderRoster();
-}
-function assign(fto, cadet) {
+
+function assign(fto, inputIdx) {
+  var input = document.getElementById('cadet-in-' + inputIdx);
+  var cadet = input ? (input.value || '').trim() : '';
+  if (!cadet) return;
   if (!rosterData.assignments[fto]) rosterData.assignments[fto] = [];
   if (rosterData.assignments[fto].length >= MAX_PER_FTO) return;
-  if (cadetAssignedTo(cadet)) return;
   rosterData.assignments[fto].push(cadet);
-  openPickerFor = null;
   saveRoster(); renderRoster();
 }
+
 function unassign(fto, cadet) {
   rosterData.assignments[fto] = (rosterData.assignments[fto]||[]).filter(function(x){ return x !== cadet; });
   saveRoster(); renderRoster();
