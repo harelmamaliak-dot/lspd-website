@@ -98,6 +98,10 @@ header {
   background-image: radial-gradient(ellipse at 50% 30%, rgba(79,142,247,0.05) 0%, transparent 60%);
   position: relative; overflow: hidden;
 }
+#role-screen.with-roster { flex-direction: row; align-items: stretch; justify-content: flex-start; overflow: auto; }
+#role-screen.with-roster .role-main { flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; padding: 24px; min-width: 0; }
+.role-main { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 #role-screen::before { content: '🛡️'; position: absolute; font-size: 400px; opacity: 0.02; top: 50%; left: 50%; transform: translate(-50%,-55%); pointer-events: none; }
 .role-title { text-align: center; margin-bottom: 32px; position: relative; z-index: 1; }
 .role-title p { font-size: 0.72rem; color: var(--text3); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
@@ -321,6 +325,37 @@ header {
 .slot-go { background:var(--accent); border:none; color:#fff; width:26px; height:26px;
   border-radius:50%; font-size:1rem; line-height:1; cursor:pointer; flex-shrink:0; }
 .slot-go:hover { filter:brightness(1.1); }
+
+/* ── Home roster side panel (FTO) ── */
+.home-roster { display: none; }
+#role-screen.with-roster .home-roster {
+  display: flex; flex-direction: column;
+  width: 340px; flex-shrink: 0; align-self: stretch;
+  background: var(--surface); border-inline-start: 1px solid var(--border);
+  z-index: 2;
+}
+.hr-head { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.05rem;
+  color: var(--text); padding: 18px 20px 14px; border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 3px; }
+.hr-head .hr-sub { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 0.7rem;
+  color: var(--text3); letter-spacing: 1px; }
+.hr-body { flex: 1; overflow-y: auto; padding: 14px 16px 20px; }
+.hr-loading, .hr-empty { color: var(--text3); font-size: 0.8rem; text-align: center; padding: 30px 12px; }
+.hr-fto { background: var(--bg2,#0f1621); border: 1px solid var(--border);
+  border-inline-start: 3px solid #f0883e; border-radius: 9px; padding: 11px 13px; margin-bottom: 9px; text-align: right; }
+.hr-fto-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.92rem; color: var(--text); }
+.hr-fto-cadets { display: flex; flex-direction: column; gap: 5px; margin-top: 7px; }
+.hr-cadet { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; color: var(--text2); }
+.hr-cadet::before { content: '🎓'; font-size: 0.85rem; }
+.hr-none { font-size: 0.74rem; color: var(--text3); font-style: italic; margin-top: 5px; }
+
+@media (max-width: 820px) {
+  #role-screen.with-roster { flex-direction: column; }
+  #role-screen.with-roster .home-roster {
+    width: 100%; border-inline-start: none; border-top: 1px solid var(--border);
+    max-height: 42vh;
+  }
+}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -376,12 +411,18 @@ header {
   <div id="content">
     <!-- Category screen -->
     <div id="role-screen">
-      <div class="role-title">
-        <p>ברוך הבא</p>
-        <h2>בחר קטגוריה</h2>
+      <div class="role-main">
+        <div class="role-title">
+          <p>ברוך הבא</p>
+          <h2>בחר קטגוריה</h2>
+        </div>
+        <div class="role-divider"></div>
+        <div class="cards-grid" id="portal-cards"></div>
       </div>
-      <div class="role-divider"></div>
-      <div class="cards-grid" id="portal-cards"></div>
+      <aside id="home-roster" class="home-roster">
+        <div class="hr-head">🗂️ רוסטר שיבוצים<span class="hr-sub">מי מלמד את מי</span></div>
+        <div class="hr-body" id="home-roster-body"><div class="hr-loading">טוען…</div></div>
+      </aside>
     </div>
 
     <!-- Portal -->
@@ -444,7 +485,6 @@ var PORTALS = {
     { icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' }
   ],
   fto: [
-    { id:'my-roster', icon:'🗂️', name:'רוסטר שיבוצים', desc:'מי מלמד את מי', color:'#f0883e', glow:'rgba(240,136,62,0.2)', file:null },
     { icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
     { icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
     { icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' }
@@ -565,6 +605,42 @@ function showScreen(id) {
 function showRoleScreen() {
   showScreen('role-screen');
   buildPortalCards();
+  setupHomeRoster();
+}
+
+function setupHomeRoster() {
+  var screen = document.getElementById('role-screen');
+  var show = (currentRole === 'fto');
+  screen.classList.toggle('with-roster', show);
+  if (!show) return;
+
+  var body = document.getElementById('home-roster-body');
+  if (!db) { body.innerHTML = '<div class="hr-empty">⚠️ אין חיבור למסד הנתונים.</div>'; return; }
+  if (rosterBound) { renderHomeRoster(); }
+  else { body.innerHTML = '<div class="hr-loading">טוען…</div>'; }
+  bindRoster(function(ok) {
+    if (!ok) { body.innerHTML = '<div class="hr-empty">⚠️ שגיאה בטעינה.</div>'; return; }
+    renderHomeRoster();
+  });
+}
+
+function renderHomeRoster() {
+  var body = document.getElementById('home-roster-body');
+  if (!body) return;
+  var d = rosterData;
+  if (!d.ftos || !d.ftos.length) {
+    body.innerHTML = '<div class="hr-empty">הפיקוד עדיין לא הגדיר שיבוצים.</div>';
+    return;
+  }
+  body.innerHTML = d.ftos.map(function(f) {
+    var cadets = (d.assignments[f] || []);
+    var cadetHtml = cadets.length
+      ? '<div class="hr-fto-cadets">' + cadets.map(function(c) {
+          return '<div class="hr-cadet">' + esc(c) + '</div>';
+        }).join('') + '</div>'
+      : '<div class="hr-none">אין שיבוץ</div>';
+    return '<div class="hr-fto"><div class="hr-fto-name">🎖️ ' + esc(f) + '</div>' + cadetHtml + '</div>';
+  }).join('');
 }
 
 function buildPortalCards() {
@@ -594,12 +670,6 @@ function openPortal(el) {
     openRoster();
     return;
   }
-  if (id === 'my-roster') {
-    if (currentRole !== 'fto') return;
-    openMyRoster();
-    return;
-  }
-
   showScreen('portal-screen');
   document.getElementById('portal-name').textContent = name;
   document.getElementById('portal-iframe').src = BASE + file;
@@ -853,12 +923,26 @@ function bindRoster(cb) {
   if (rosterBound) { cb(true); return; }
   db.collection('roster').doc('current').onSnapshot(function(doc) {
     rosterData = rosterNormalize(doc.exists ? doc.data() : {});
+    var first = !rosterBound;
     rosterBound = true;
-    cb(true);
+    if (first) { cb(true); }
+    else { refreshRosterUI(); }  // live update on later changes
   }, function(err) {
     console.warn('roster load error', err);
     cb(false);
   });
+}
+
+// Refresh whichever roster UI is currently on screen (live updates)
+function refreshRosterUI() {
+  var roleScreen = document.getElementById('role-screen');
+  if (roleScreen && roleScreen.style.display !== 'none' && roleScreen.classList.contains('with-roster')) {
+    renderHomeRoster();
+  }
+  var rosterScreen = document.getElementById('roster-screen');
+  if (rosterScreen && rosterScreen.style.display !== 'none') {
+    renderRoster();
+  }
 }
 
 function saveRoster() {
