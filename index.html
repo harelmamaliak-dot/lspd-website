@@ -423,7 +423,7 @@ var PORTALS = {
     { icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' }
   ],
   fto: [
-    { id:'my-roster', icon:'🎓', name:'הקאדטים שלי', desc:'מי משובץ אליי להדרכה', color:'#f0883e', glow:'rgba(240,136,62,0.2)', file:null },
+    { id:'my-roster', icon:'🗂️', name:'רוסטר שיבוצים', desc:'מי מלמד את מי', color:'#f0883e', glow:'rgba(240,136,62,0.2)', file:null },
     { icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
     { icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
     { icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' }
@@ -876,71 +876,93 @@ function cadetAssignedTo(cadet) {
 }
 
 // ---- Command edit view ----
-function openRoster() {
+function openRoster() { openRosterView(true); }
+function openMyRoster() { openRosterView(false); }
+
+function openRosterView(editable) {
   showScreen('roster-screen');
-  document.getElementById('roster-title').textContent = '🗂️ ניהול רוסטר';
+  document.getElementById('roster-title').textContent = editable ? '🗂️ ניהול רוסטר' : '🗂️ רוסטר שיבוצים';
+  document.getElementById('roster-save-state').textContent = '';
   var body = document.getElementById('roster-body');
   if (!db) { body.innerHTML = '<div class="hist-empty">⚠️ אין חיבור למסד הנתונים.</div>'; return; }
   body.innerHTML = '<div class="hist-empty">טוען…</div>';
+  window._rosterEditable = editable;
   bindRoster(function(ok) {
     if (!ok) { body.innerHTML = '<div class="hist-empty">⚠️ שגיאה בטעינת הרוסטר.</div>'; return; }
-    renderRosterEditor();
+    renderRoster();
   });
 }
 
-function renderRosterEditor() {
-  if (!document.getElementById('roster-screen').style.display) {}
+function renderRoster() {
+  var editable = !!window._rosterEditable;
   cleanAssignments();
   var d = rosterData;
+  var body = document.getElementById('roster-body');
 
-  var ftoList = d.ftos.length ? d.ftos.map(function(f) {
-    var n = (d.assignments[f] || []).length;
-    return '<div class="name-item"><span class="nm">' + esc(f) + '</span>' +
-      '<span class="badge2">' + n + '/' + MAX_PER_FTO + '</span>' +
-      '<button class="del" title="הסר" onclick="removeFto(\'' + jsq(f) + '\')">🗑</button></div>';
-  }).join('') : '<div class="roster-empty-col">אין מדריכים. הוסף למטה.</div>';
-
-  var cadetList = d.cadets.length ? d.cadets.map(function(c) {
-    var to = cadetAssignedTo(c);
-    return '<div class="name-item"><span class="nm">' + esc(c) + '</span>' +
-      (to ? '<span class="badge2">↔ ' + esc(to) + '</span>' : '<span class="badge2">לא משובץ</span>') +
-      '<button class="del" title="הסר" onclick="removeCadet(\'' + jsq(c) + '\')">🗑</button></div>';
-  }).join('') : '<div class="roster-empty-col">אין חניכים. הוסף למטה.</div>';
-
+  // Assignment table (both views)
   var assignRows = d.ftos.length ? d.ftos.map(function(f) {
     var slots = d.assignments[f] || [];
     var slotHtml = slots.map(function(c) {
       return '<span class="slot">' + esc(c) +
-        '<button class="sx" onclick="unassign(\'' + jsq(f) + '\',\'' + jsq(c) + '\')">✕</button></span>';
+        (editable ? '<button class="sx" onclick="unassign(\'' + jsq(f) + '\',\'' + jsq(c) + '\')">✕</button>' : '') +
+        '</span>';
     }).join('');
-    if (slots.length < MAX_PER_FTO) {
-      slotHtml += '<div class="assign-picker">' +
-        '<button class="slot-add" onclick="togglePicker(\'' + jsq(f) + '\')">+ שבץ חניך</button>' +
-        (openPickerFor === f ? pickerMenu(f) : '') + '</div>';
-    } else {
-      slotHtml += '<span class="slot-full">מלא (' + MAX_PER_FTO + ')</span>';
+    if (editable) {
+      if (slots.length < MAX_PER_FTO) {
+        slotHtml += '<div class="assign-picker">' +
+          '<button class="slot-add" onclick="togglePicker(\'' + jsq(f) + '\')">+ שבץ חניך</button>' +
+          (openPickerFor === f ? pickerMenu(f) : '') + '</div>';
+      } else {
+        slotHtml += '<span class="slot-full">מלא (' + MAX_PER_FTO + ')</span>';
+      }
+    } else if (!slots.length) {
+      slotHtml = '<span class="slot-full">— אין שיבוץ —</span>';
     }
     return '<div class="assign-row">' +
       '<div class="assign-fto"><div class="afn">🎖️ ' + esc(f) + '</div>' +
       '<div class="afc">' + slots.length + ' מתוך ' + MAX_PER_FTO + ' חניכים</div></div>' +
       '<div class="assign-slots">' + slotHtml + '</div></div>';
-  }).join('') : '<div class="roster-empty-col">הוסף מדריכים כדי להתחיל לשבץ.</div>';
+  }).join('') : '<div class="roster-empty-col">' +
+      (editable ? 'הוסף מדריכים כדי להתחיל לשבץ.' : 'הפיקוד עדיין לא הגדיר שיבוצים.') + '</div>';
 
-  document.getElementById('roster-body').innerHTML =
-    '<div class="roster-grid">' +
-      '<div class="roster-col"><h3>🎖️ מדריכים (FTO)<span class="cnt">' + d.ftos.length + '</span></h3>' +
-        '<div class="name-list">' + ftoList + '</div>' +
-        '<div class="name-add"><input id="add-fto" placeholder="שם מדריך חדש…" ' +
-          'onkeydown="if(event.key===\'Enter\')addFto()"><button onclick="addFto()">הוסף</button></div>' +
-      '</div>' +
-      '<div class="roster-col"><h3>🎓 חניכים (Cadets)<span class="cnt">' + d.cadets.length + '</span></h3>' +
-        '<div class="name-list">' + cadetList + '</div>' +
-        '<div class="name-add"><input id="add-cadet" placeholder="שם חניך חדש…" ' +
-          'onkeydown="if(event.key===\'Enter\')addCadet()"><button onclick="addCadet()">הוסף</button></div>' +
-      '</div>' +
-    '</div>' +
-    '<div class="assign-h">📋 שיבוץ — מי מלמד את מי</div>' +
+  var html = '';
+
+  // Name-management columns — command only
+  if (editable) {
+    var ftoList = d.ftos.length ? d.ftos.map(function(f) {
+      var n = (d.assignments[f] || []).length;
+      return '<div class="name-item"><span class="nm">' + esc(f) + '</span>' +
+        '<span class="badge2">' + n + '/' + MAX_PER_FTO + '</span>' +
+        '<button class="del" title="הסר" onclick="removeFto(\'' + jsq(f) + '\')">🗑</button></div>';
+    }).join('') : '<div class="roster-empty-col">אין מדריכים. הוסף למטה.</div>';
+
+    var cadetList = d.cadets.length ? d.cadets.map(function(c) {
+      var to = cadetAssignedTo(c);
+      return '<div class="name-item"><span class="nm">' + esc(c) + '</span>' +
+        (to ? '<span class="badge2">↔ ' + esc(to) + '</span>' : '<span class="badge2">לא משובץ</span>') +
+        '<button class="del" title="הסר" onclick="removeCadet(\'' + jsq(c) + '\')">🗑</button></div>';
+    }).join('') : '<div class="roster-empty-col">אין חניכים. הוסף למטה.</div>';
+
+    html +=
+      '<div class="roster-grid">' +
+        '<div class="roster-col"><h3>🎖️ מדריכים (FTO)<span class="cnt">' + d.ftos.length + '</span></h3>' +
+          '<div class="name-list">' + ftoList + '</div>' +
+          '<div class="name-add"><input id="add-fto" placeholder="שם מדריך חדש…" ' +
+            'onkeydown="if(event.key===\'Enter\')addFto()"><button onclick="addFto()">הוסף</button></div>' +
+        '</div>' +
+        '<div class="roster-col"><h3>🎓 חניכים (Cadets)<span class="cnt">' + d.cadets.length + '</span></h3>' +
+          '<div class="name-list">' + cadetList + '</div>' +
+          '<div class="name-add"><input id="add-cadet" placeholder="שם חניך חדש…" ' +
+            'onkeydown="if(event.key===\'Enter\')addCadet()"><button onclick="addCadet()">הוסף</button></div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  html +=
+    '<div class="assign-h">📋 מי מלמד את מי</div>' +
     '<div class="assign-table">' + assignRows + '</div>';
+
+  body.innerHTML = html;
 }
 
 function pickerMenu(fto) {
@@ -953,7 +975,7 @@ function pickerMenu(fto) {
 
 function togglePicker(fto) {
   openPickerFor = (openPickerFor === fto) ? null : fto;
-  renderRosterEditor();
+  renderRoster();
 }
 
 document.addEventListener('click', function(e) {
@@ -961,7 +983,7 @@ document.addEventListener('click', function(e) {
   if (e.target.closest && e.target.closest('.assign-picker')) return;
   openPickerFor = null;
   if (document.getElementById('roster-screen').style.display !== 'none' && currentRole === 'command') {
-    renderRosterEditor();
+    renderRoster();
   }
 });
 
@@ -974,7 +996,7 @@ function addFto() {
   if (rosterData.ftos.indexOf(v) !== -1) { el.value=''; return; }
   rosterData.ftos.push(v);
   if (!rosterData.assignments[v]) rosterData.assignments[v] = [];
-  saveRoster(); renderRosterEditor();
+  saveRoster(); renderRoster();
 }
 function addCadet() {
   var el = document.getElementById('add-cadet');
@@ -982,14 +1004,14 @@ function addCadet() {
   if (!v) return;
   if (rosterData.cadets.indexOf(v) !== -1) { el.value=''; return; }
   rosterData.cadets.push(v);
-  saveRoster(); renderRosterEditor();
+  saveRoster(); renderRoster();
 }
 function removeFto(f) {
   if (!confirm('להסיר את המדריך "' + f + '"? השיבוצים שלו יימחקו.')) return;
   rosterData.ftos = rosterData.ftos.filter(function(x){ return x !== f; });
   delete rosterData.assignments[f];
   if (openPickerFor === f) openPickerFor = null;
-  saveRoster(); renderRosterEditor();
+  saveRoster(); renderRoster();
 }
 function removeCadet(c) {
   if (!confirm('להסיר את החניך "' + c + '"?')) return;
@@ -997,7 +1019,7 @@ function removeCadet(c) {
   Object.keys(rosterData.assignments).forEach(function(f) {
     rosterData.assignments[f] = (rosterData.assignments[f]||[]).filter(function(x){ return x !== c; });
   });
-  saveRoster(); renderRosterEditor();
+  saveRoster(); renderRoster();
 }
 function assign(fto, cadet) {
   if (!rosterData.assignments[fto]) rosterData.assignments[fto] = [];
@@ -1005,68 +1027,11 @@ function assign(fto, cadet) {
   if (cadetAssignedTo(cadet)) return;
   rosterData.assignments[fto].push(cadet);
   openPickerFor = null;
-  saveRoster(); renderRosterEditor();
+  saveRoster(); renderRoster();
 }
 function unassign(fto, cadet) {
   rosterData.assignments[fto] = (rosterData.assignments[fto]||[]).filter(function(x){ return x !== cadet; });
-  saveRoster(); renderRosterEditor();
-}
-
-// ---- FTO read-only view ----
-function openMyRoster() {
-  showScreen('roster-screen');
-  document.getElementById('roster-title').textContent = '🎓 הקאדטים שלי';
-  document.getElementById('roster-save-state').textContent = '';
-  var body = document.getElementById('roster-body');
-  if (!db) { body.innerHTML = '<div class="hist-empty">⚠️ אין חיבור למסד הנתונים.</div>'; return; }
-  body.innerHTML = '<div class="hist-empty">טוען…</div>';
-  bindRoster(function(ok) {
-    if (!ok) { body.innerHTML = '<div class="hist-empty">⚠️ שגיאה בטעינה.</div>'; return; }
-    renderMyRoster();
-  });
-}
-
-function renderMyRoster() {
-  var me = localStorage.getItem('lspd_fto_me') || '';
-  var body = document.getElementById('roster-body');
-
-  // must pick identity, and it must still exist in the list
-  if (!me || rosterData.ftos.indexOf(me) === -1) {
-    var opts = rosterData.ftos.map(function(f) {
-      return '<option value="' + esc(f) + '">' + esc(f) + '</option>';
-    }).join('');
-    body.innerHTML = '<div class="myr-pick">' +
-      '<label>בחר את שמך מרשימת המדריכים כדי לראות את החניכים המשובצים אליך:</label>' +
-      (rosterData.ftos.length ?
-        '<select id="myr-select"><option value="">— בחר —</option>' + opts + '</select>' +
-        '<button class="myr-switch" onclick="confirmMyName()">אישור</button>' :
-        '<div class="myr-none">הפיקוד עדיין לא הוסיף מדריכים לרוסטר.</div>') +
-      '</div>';
-    return;
-  }
-
-  var cadets = rosterData.assignments[me] || [];
-  var cadetHtml = cadets.length ? cadets.map(function(c) {
-    return '<div class="myr-cadet"><span class="mc-ic">🎓</span>' +
-      '<div><div class="mc-name">' + esc(c) + '</div>' +
-      '<div class="mc-sub">משובץ אליך להדרכה</div></div></div>';
-  }).join('') : '<div class="myr-none">אין חניכים משובצים אליך כרגע.<br>הפיקוד ישבץ אותך בסיום האקדמיה.</div>';
-
-  body.innerHTML =
-    '<div class="myr-hero"><div class="mh-ic">🎖️</div><div class="mh-name">' + esc(me) + '</div></div>' +
-    '<div class="myr-cadets">' + cadetHtml + '</div>' +
-    '<button class="myr-switch" onclick="switchMyName()">↺ זה לא אני / החלף שם</button>';
-}
-
-function confirmMyName() {
-  var sel = document.getElementById('myr-select');
-  if (!sel || !sel.value) return;
-  localStorage.setItem('lspd_fto_me', sel.value);
-  renderMyRoster();
-}
-function switchMyName() {
-  localStorage.removeItem('lspd_fto_me');
-  renderMyRoster();
+  saveRoster(); renderRoster();
 }
 
 //]]></script>
