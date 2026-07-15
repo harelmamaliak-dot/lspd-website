@@ -220,6 +220,86 @@ header {
 .det-text .v { font-size:0.82rem; color:var(--text); line-height:1.6; white-space:pre-wrap; }
 .hist-row { cursor:pointer; }
 .det-none { color:var(--text3); font-size:0.82rem; text-align:center; padding:26px; }
+
+/* ── Roster ── */
+#roster-screen { display:none; flex-direction:column; flex:1; overflow:hidden; }
+.roster-save { margin-inline-start:auto; font-size:0.72rem; color:var(--text3); }
+.roster-save.saving { color:#fbbf24; }
+.roster-save.saved  { color:#34d399; }
+.roster-body { flex:1; overflow-y:auto; padding:18px 24px 28px; }
+.roster-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:22px; }
+@media (max-width:760px){ .roster-grid { grid-template-columns:1fr; } }
+.roster-col { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+.roster-col h3 { font-family:'Rajdhani',sans-serif; font-size:1rem; font-weight:700; color:var(--text);
+  margin:0 0 10px; display:flex; align-items:center; gap:8px; }
+.roster-col h3 .cnt { font-size:0.7rem; color:var(--text3); background:var(--bg2,#0f1621);
+  border:1px solid var(--border); border-radius:20px; padding:2px 9px; margin-inline-start:auto; }
+.name-list { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; max-height:280px; overflow-y:auto; }
+.name-item { display:flex; align-items:center; gap:8px; background:var(--bg2,#0f1621);
+  border:1px solid var(--border); border-radius:7px; padding:8px 10px; }
+.name-item .nm { flex:1; font-size:0.85rem; color:var(--text); text-align:right;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.name-item .badge2 { font-size:0.66rem; color:var(--text3); background:var(--surface);
+  border:1px solid var(--border); border-radius:20px; padding:2px 8px; }
+.name-item .del { background:transparent; border:none; color:var(--text3); cursor:pointer;
+  font-size:0.9rem; padding:2px 5px; border-radius:5px; flex-shrink:0; }
+.name-item .del:hover { color:#f87171; background:rgba(248,113,113,0.1); }
+.name-add { display:flex; gap:6px; }
+.name-add input { flex:1; background:var(--bg2,#0f1621); border:1px solid var(--border);
+  border-radius:7px; padding:8px 10px; color:var(--text); font-size:0.82rem; outline:none; }
+.name-add input:focus { border-color:var(--accent); }
+.name-add button { background:var(--accent); border:none; color:#fff; border-radius:7px;
+  padding:0 14px; font-size:0.8rem; font-weight:600; cursor:pointer; }
+.name-add button:hover { filter:brightness(1.1); }
+.roster-empty-col { font-size:0.78rem; color:var(--text3); text-align:center; padding:16px; }
+
+.assign-h { font-family:'Rajdhani',sans-serif; font-size:1.05rem; font-weight:700; color:var(--text);
+  margin:6px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.assign-table { display:flex; flex-direction:column; gap:8px; }
+.assign-row { display:flex; align-items:center; gap:12px; background:var(--surface);
+  border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+.assign-fto { width:190px; flex-shrink:0; text-align:right; }
+.assign-fto .afn { font-weight:700; font-size:0.9rem; color:var(--text);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.assign-fto .afc { font-size:0.68rem; color:var(--text3); margin-top:2px; }
+.assign-slots { flex:1; display:flex; gap:8px; flex-wrap:wrap; }
+.slot { display:flex; align-items:center; gap:6px; background:var(--bg2,#0f1621);
+  border:1px solid var(--border); border-radius:20px; padding:5px 6px 5px 12px; font-size:0.8rem; color:var(--text); }
+.slot .sx { background:transparent; border:none; color:var(--text3); cursor:pointer;
+  font-size:0.85rem; padding:0 3px; border-radius:50%; }
+.slot .sx:hover { color:#f87171; }
+.slot-add { background:transparent; border:1px dashed var(--border); color:var(--text3);
+  border-radius:20px; padding:6px 12px; font-size:0.78rem; cursor:pointer; }
+.slot-add:hover { border-color:var(--accent); color:var(--accent); }
+.slot-full { font-size:0.72rem; color:var(--text3); padding:6px 4px; }
+.assign-picker { position:relative; }
+.picker-menu { position:absolute; z-index:20; top:calc(100% + 4px); right:0; min-width:200px;
+  background:var(--bg2,#0f1621); border:1px solid var(--border); border-radius:9px; padding:6px;
+  box-shadow:0 12px 34px rgba(0,0,0,0.5); max-height:240px; overflow-y:auto; }
+.picker-menu button { display:block; width:100%; text-align:right; background:transparent; border:none;
+  color:var(--text); padding:8px 10px; border-radius:6px; font-size:0.82rem; cursor:pointer; }
+.picker-menu button:hover { background:var(--surface); }
+.picker-menu .pk-empty { color:var(--text3); font-size:0.76rem; padding:8px 10px; text-align:center; }
+
+/* FTO read-only view */
+.myr-hero { text-align:center; padding:10px 0 20px; }
+.myr-hero .mh-ic { font-size:2.4rem; }
+.myr-hero .mh-name { font-family:'Rajdhani',sans-serif; font-size:1.3rem; font-weight:700; color:var(--text); margin-top:4px; }
+.myr-cadets { display:flex; flex-direction:column; gap:10px; max-width:520px; margin:0 auto; }
+.myr-cadet { display:flex; align-items:center; gap:14px; background:var(--surface);
+  border:1px solid var(--border); border-inline-start:3px solid #f0883e; border-radius:10px; padding:14px 16px; }
+.myr-cadet .mc-ic { font-size:1.5rem; }
+.myr-cadet .mc-name { font-weight:700; font-size:0.95rem; color:var(--text); }
+.myr-cadet .mc-sub { font-size:0.72rem; color:var(--text3); margin-top:2px; }
+.myr-none { text-align:center; color:var(--text3); font-size:0.86rem; padding:40px 20px; }
+.myr-pick { max-width:420px; margin:0 auto; }
+.myr-pick label { display:block; font-size:0.8rem; color:var(--text2); margin-bottom:8px; text-align:center; }
+.myr-pick select { width:100%; background:var(--surface); border:1px solid var(--border);
+  border-radius:9px; padding:11px 12px; color:var(--text); font-size:0.9rem; outline:none; }
+.myr-pick select:focus { border-color:var(--accent); }
+.myr-switch { display:block; margin:14px auto 0; background:transparent; border:none;
+  color:var(--text3); font-size:0.76rem; cursor:pointer; }
+.myr-switch:hover { color:var(--text2); }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -315,6 +395,18 @@ header {
         <div class="hist-empty">טוען נתונים...</div>
       </div>
     </div>
+
+    <!-- Roster (command edit / fto view) -->
+    <div id="roster-screen">
+      <div class="portal-topbar">
+        <button class="portal-back" onclick="showRoleScreen()">← חזור</button>
+        <span class="portal-name" id="roster-title">🗂️ ניהול רוסטר</span>
+        <span id="roster-save-state" class="roster-save"></span>
+      </div>
+      <div class="roster-body" id="roster-body">
+        <div class="hist-empty">טוען נתונים...</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -331,6 +423,7 @@ var PORTALS = {
     { icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' }
   ],
   fto: [
+    { id:'my-roster', icon:'🎓', name:'הקאדטים שלי', desc:'מי משובץ אליי להדרכה', color:'#f0883e', glow:'rgba(240,136,62,0.2)', file:null },
     { icon:'📚', name:'מבחן נהלים', desc:'PRRP PD', color:'#f87171', glow:'rgba(248,113,113,0.2)', file:'prrp_pd.html' },
     { icon:'🏅', name:'מבחן הסמכה FTO', desc:'lspd_fto_exam_portal', color:'#fbbf24', glow:'rgba(251,191,36,0.2)', file:'lspd_fto_exam_portal.html' },
     { icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' }
@@ -341,7 +434,8 @@ var PORTALS = {
     { icon:'📝', name:'דיווח הערכת קאדט', desc:'lspd_fto_evaluation_portal', color:'#a594f9', glow:'rgba(165,148,249,0.2)', file:'lspd_fto_evaluation_portal.html' },
     { icon:'📋', name:'דיווח הערכת FTO', desc:'lspd_cadet_feedback_portal', color:'#34d399', glow:'rgba(52,211,153,0.2)', file:'lspd_cadet_feedback_portal.html' },
     { icon:'⏱️', name:'מחשבון מערכת שעות', desc:'lspd_tracker', color:'#38bdf8', glow:'rgba(56,189,248,0.2)', file:'lspd_tracker_v4_0.html' },
-    { id:'history', icon:'📊', name:'היסטוריית הגשות', desc:'כל המבחנים והדוחות', color:'#e2b96f', glow:'rgba(226,185,111,0.2)', file:null }
+    { id:'history', icon:'📊', name:'היסטוריית הגשות', desc:'כל המבחנים והדוחות', color:'#e2b96f', glow:'rgba(226,185,111,0.2)', file:null },
+    { id:'roster', icon:'🗂️', name:'ניהול רוסטר', desc:'שיבוץ חניכים למדריכים', color:'#f0883e', glow:'rgba(240,136,62,0.2)', file:null }
   ]
 };
 
@@ -437,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── SCREENS ───────────────────────────────────────────────────────────────────
 function showScreen(id) {
-  ['role-screen','portal-screen','history-screen'].forEach(function(s){
+  ['role-screen','portal-screen','history-screen','roster-screen'].forEach(function(s){
     var el = document.getElementById(s);
     el.style.display = 'none';
     el.style.flexDirection = '';
@@ -472,6 +566,16 @@ function openPortal(el) {
   if (id === 'history') {
     if (currentRole !== 'command') return;
     openHistory();
+    return;
+  }
+  if (id === 'roster') {
+    if (currentRole !== 'command') return;
+    openRoster();
+    return;
+  }
+  if (id === 'my-roster') {
+    if (currentRole !== 'fto') return;
+    openMyRoster();
     return;
   }
 
@@ -706,6 +810,263 @@ function openDetail(idx) {
   document.getElementById('det-body').innerHTML = html;
   document.getElementById('det-body').scrollTop = 0;
   document.getElementById('det-overlay').classList.add('open');
+}
+
+
+
+// ── ROSTER ────────────────────────────────────────────────────────────────────
+var MAX_PER_FTO = 2;
+var rosterData = { ftos: [], cadets: [], assignments: {} };
+var rosterBound = false;
+var openPickerFor = null;
+
+function rosterNormalize(d) {
+  d = d || {};
+  return {
+    ftos: Array.isArray(d.ftos) ? d.ftos : [],
+    cadets: Array.isArray(d.cadets) ? d.cadets : [],
+    assignments: (d.assignments && typeof d.assignments === 'object') ? d.assignments : {}
+  };
+}
+
+function bindRoster(cb) {
+  if (!db) { cb(false); return; }
+  if (rosterBound) { cb(true); return; }
+  db.collection('roster').doc('current').onSnapshot(function(doc) {
+    rosterData = rosterNormalize(doc.exists ? doc.data() : {});
+    rosterBound = true;
+    cb(true);
+  }, function(err) {
+    console.warn('roster load error', err);
+    cb(false);
+  });
+}
+
+function saveRoster() {
+  if (!db) return;
+  var st = document.getElementById('roster-save-state');
+  if (st) { st.textContent = 'שומר…'; st.className = 'roster-save saving'; }
+  db.collection('roster').doc('current').set(rosterData).then(function() {
+    if (st) { st.textContent = '✓ נשמר'; st.className = 'roster-save saved';
+      setTimeout(function(){ if(st.textContent==='✓ נשמר'){ st.textContent=''; st.className='roster-save'; } }, 1800); }
+  }).catch(function(e) {
+    if (st) { st.textContent = '⚠️ שגיאה בשמירה'; st.className = 'roster-save'; }
+    console.warn('roster save failed', e);
+  });
+}
+
+// clean assignments: drop unknown ftos/cadets, cap at MAX
+function cleanAssignments() {
+  var a = {};
+  rosterData.ftos.forEach(function(f) {
+    var list = (rosterData.assignments[f] || []).filter(function(c) {
+      return rosterData.cadets.indexOf(c) !== -1;
+    });
+    a[f] = list.slice(0, MAX_PER_FTO);
+  });
+  rosterData.assignments = a;
+}
+
+function cadetAssignedTo(cadet) {
+  var found = null;
+  Object.keys(rosterData.assignments).forEach(function(f) {
+    if ((rosterData.assignments[f] || []).indexOf(cadet) !== -1) found = f;
+  });
+  return found;
+}
+
+// ---- Command edit view ----
+function openRoster() {
+  showScreen('roster-screen');
+  document.getElementById('roster-title').textContent = '🗂️ ניהול רוסטר';
+  var body = document.getElementById('roster-body');
+  if (!db) { body.innerHTML = '<div class="hist-empty">⚠️ אין חיבור למסד הנתונים.</div>'; return; }
+  body.innerHTML = '<div class="hist-empty">טוען…</div>';
+  bindRoster(function(ok) {
+    if (!ok) { body.innerHTML = '<div class="hist-empty">⚠️ שגיאה בטעינת הרוסטר.</div>'; return; }
+    renderRosterEditor();
+  });
+}
+
+function renderRosterEditor() {
+  if (!document.getElementById('roster-screen').style.display) {}
+  cleanAssignments();
+  var d = rosterData;
+
+  var ftoList = d.ftos.length ? d.ftos.map(function(f) {
+    var n = (d.assignments[f] || []).length;
+    return '<div class="name-item"><span class="nm">' + esc(f) + '</span>' +
+      '<span class="badge2">' + n + '/' + MAX_PER_FTO + '</span>' +
+      '<button class="del" title="הסר" onclick="removeFto(\'' + jsq(f) + '\')">🗑</button></div>';
+  }).join('') : '<div class="roster-empty-col">אין מדריכים. הוסף למטה.</div>';
+
+  var cadetList = d.cadets.length ? d.cadets.map(function(c) {
+    var to = cadetAssignedTo(c);
+    return '<div class="name-item"><span class="nm">' + esc(c) + '</span>' +
+      (to ? '<span class="badge2">↔ ' + esc(to) + '</span>' : '<span class="badge2">לא משובץ</span>') +
+      '<button class="del" title="הסר" onclick="removeCadet(\'' + jsq(c) + '\')">🗑</button></div>';
+  }).join('') : '<div class="roster-empty-col">אין חניכים. הוסף למטה.</div>';
+
+  var assignRows = d.ftos.length ? d.ftos.map(function(f) {
+    var slots = d.assignments[f] || [];
+    var slotHtml = slots.map(function(c) {
+      return '<span class="slot">' + esc(c) +
+        '<button class="sx" onclick="unassign(\'' + jsq(f) + '\',\'' + jsq(c) + '\')">✕</button></span>';
+    }).join('');
+    if (slots.length < MAX_PER_FTO) {
+      slotHtml += '<div class="assign-picker">' +
+        '<button class="slot-add" onclick="togglePicker(\'' + jsq(f) + '\')">+ שבץ חניך</button>' +
+        (openPickerFor === f ? pickerMenu(f) : '') + '</div>';
+    } else {
+      slotHtml += '<span class="slot-full">מלא (' + MAX_PER_FTO + ')</span>';
+    }
+    return '<div class="assign-row">' +
+      '<div class="assign-fto"><div class="afn">🎖️ ' + esc(f) + '</div>' +
+      '<div class="afc">' + slots.length + ' מתוך ' + MAX_PER_FTO + ' חניכים</div></div>' +
+      '<div class="assign-slots">' + slotHtml + '</div></div>';
+  }).join('') : '<div class="roster-empty-col">הוסף מדריכים כדי להתחיל לשבץ.</div>';
+
+  document.getElementById('roster-body').innerHTML =
+    '<div class="roster-grid">' +
+      '<div class="roster-col"><h3>🎖️ מדריכים (FTO)<span class="cnt">' + d.ftos.length + '</span></h3>' +
+        '<div class="name-list">' + ftoList + '</div>' +
+        '<div class="name-add"><input id="add-fto" placeholder="שם מדריך חדש…" ' +
+          'onkeydown="if(event.key===\'Enter\')addFto()"><button onclick="addFto()">הוסף</button></div>' +
+      '</div>' +
+      '<div class="roster-col"><h3>🎓 חניכים (Cadets)<span class="cnt">' + d.cadets.length + '</span></h3>' +
+        '<div class="name-list">' + cadetList + '</div>' +
+        '<div class="name-add"><input id="add-cadet" placeholder="שם חניך חדש…" ' +
+          'onkeydown="if(event.key===\'Enter\')addCadet()"><button onclick="addCadet()">הוסף</button></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="assign-h">📋 שיבוץ — מי מלמד את מי</div>' +
+    '<div class="assign-table">' + assignRows + '</div>';
+}
+
+function pickerMenu(fto) {
+  var avail = rosterData.cadets.filter(function(c) { return !cadetAssignedTo(c); });
+  var inner = avail.length ? avail.map(function(c) {
+    return '<button onclick="assign(\'' + jsq(fto) + '\',\'' + jsq(c) + '\')">' + esc(c) + '</button>';
+  }).join('') : '<div class="pk-empty">כל החניכים כבר משובצים</div>';
+  return '<div class="picker-menu">' + inner + '</div>';
+}
+
+function togglePicker(fto) {
+  openPickerFor = (openPickerFor === fto) ? null : fto;
+  renderRosterEditor();
+}
+
+document.addEventListener('click', function(e) {
+  if (openPickerFor === null) return;
+  if (e.target.closest && e.target.closest('.assign-picker')) return;
+  openPickerFor = null;
+  if (document.getElementById('roster-screen').style.display !== 'none' && currentRole === 'command') {
+    renderRosterEditor();
+  }
+});
+
+function jsq(v) { return String(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+function addFto() {
+  var el = document.getElementById('add-fto');
+  var v = (el.value || '').trim();
+  if (!v) return;
+  if (rosterData.ftos.indexOf(v) !== -1) { el.value=''; return; }
+  rosterData.ftos.push(v);
+  if (!rosterData.assignments[v]) rosterData.assignments[v] = [];
+  saveRoster(); renderRosterEditor();
+}
+function addCadet() {
+  var el = document.getElementById('add-cadet');
+  var v = (el.value || '').trim();
+  if (!v) return;
+  if (rosterData.cadets.indexOf(v) !== -1) { el.value=''; return; }
+  rosterData.cadets.push(v);
+  saveRoster(); renderRosterEditor();
+}
+function removeFto(f) {
+  if (!confirm('להסיר את המדריך "' + f + '"? השיבוצים שלו יימחקו.')) return;
+  rosterData.ftos = rosterData.ftos.filter(function(x){ return x !== f; });
+  delete rosterData.assignments[f];
+  if (openPickerFor === f) openPickerFor = null;
+  saveRoster(); renderRosterEditor();
+}
+function removeCadet(c) {
+  if (!confirm('להסיר את החניך "' + c + '"?')) return;
+  rosterData.cadets = rosterData.cadets.filter(function(x){ return x !== c; });
+  Object.keys(rosterData.assignments).forEach(function(f) {
+    rosterData.assignments[f] = (rosterData.assignments[f]||[]).filter(function(x){ return x !== c; });
+  });
+  saveRoster(); renderRosterEditor();
+}
+function assign(fto, cadet) {
+  if (!rosterData.assignments[fto]) rosterData.assignments[fto] = [];
+  if (rosterData.assignments[fto].length >= MAX_PER_FTO) return;
+  if (cadetAssignedTo(cadet)) return;
+  rosterData.assignments[fto].push(cadet);
+  openPickerFor = null;
+  saveRoster(); renderRosterEditor();
+}
+function unassign(fto, cadet) {
+  rosterData.assignments[fto] = (rosterData.assignments[fto]||[]).filter(function(x){ return x !== cadet; });
+  saveRoster(); renderRosterEditor();
+}
+
+// ---- FTO read-only view ----
+function openMyRoster() {
+  showScreen('roster-screen');
+  document.getElementById('roster-title').textContent = '🎓 הקאדטים שלי';
+  document.getElementById('roster-save-state').textContent = '';
+  var body = document.getElementById('roster-body');
+  if (!db) { body.innerHTML = '<div class="hist-empty">⚠️ אין חיבור למסד הנתונים.</div>'; return; }
+  body.innerHTML = '<div class="hist-empty">טוען…</div>';
+  bindRoster(function(ok) {
+    if (!ok) { body.innerHTML = '<div class="hist-empty">⚠️ שגיאה בטעינה.</div>'; return; }
+    renderMyRoster();
+  });
+}
+
+function renderMyRoster() {
+  var me = localStorage.getItem('lspd_fto_me') || '';
+  var body = document.getElementById('roster-body');
+
+  // must pick identity, and it must still exist in the list
+  if (!me || rosterData.ftos.indexOf(me) === -1) {
+    var opts = rosterData.ftos.map(function(f) {
+      return '<option value="' + esc(f) + '">' + esc(f) + '</option>';
+    }).join('');
+    body.innerHTML = '<div class="myr-pick">' +
+      '<label>בחר את שמך מרשימת המדריכים כדי לראות את החניכים המשובצים אליך:</label>' +
+      (rosterData.ftos.length ?
+        '<select id="myr-select"><option value="">— בחר —</option>' + opts + '</select>' +
+        '<button class="myr-switch" onclick="confirmMyName()">אישור</button>' :
+        '<div class="myr-none">הפיקוד עדיין לא הוסיף מדריכים לרוסטר.</div>') +
+      '</div>';
+    return;
+  }
+
+  var cadets = rosterData.assignments[me] || [];
+  var cadetHtml = cadets.length ? cadets.map(function(c) {
+    return '<div class="myr-cadet"><span class="mc-ic">🎓</span>' +
+      '<div><div class="mc-name">' + esc(c) + '</div>' +
+      '<div class="mc-sub">משובץ אליך להדרכה</div></div></div>';
+  }).join('') : '<div class="myr-none">אין חניכים משובצים אליך כרגע.<br>הפיקוד ישבץ אותך בסיום האקדמיה.</div>';
+
+  body.innerHTML =
+    '<div class="myr-hero"><div class="mh-ic">🎖️</div><div class="mh-name">' + esc(me) + '</div></div>' +
+    '<div class="myr-cadets">' + cadetHtml + '</div>' +
+    '<button class="myr-switch" onclick="switchMyName()">↺ זה לא אני / החלף שם</button>';
+}
+
+function confirmMyName() {
+  var sel = document.getElementById('myr-select');
+  if (!sel || !sel.value) return;
+  localStorage.setItem('lspd_fto_me', sel.value);
+  renderMyRoster();
+}
+function switchMyName() {
+  localStorage.removeItem('lspd_fto_me');
+  renderMyRoster();
 }
 
 //]]></script>
