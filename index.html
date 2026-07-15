@@ -318,44 +318,58 @@ header {
 .fto-del { background:transparent; border:none; color:var(--text3); cursor:pointer;
   font-size:0.7rem; padding:0; }
 .fto-del:hover { color:#f87171; }
-.slot-input { display:inline-flex; align-items:center; gap:4px; }
-.slot-input input { background:var(--bg2,#0f1621); border:1px solid var(--border); border-radius:20px;
-  padding:6px 12px; color:var(--text); font-size:0.8rem; outline:none; width:140px; }
-.slot-input input:focus { border-color:var(--accent); }
-.slot-go { background:var(--accent); border:none; color:#fff; width:26px; height:26px;
-  border-radius:50%; font-size:1rem; line-height:1; cursor:pointer; flex-shrink:0; }
-.slot-go:hover { filter:brightness(1.1); }
-
 /* ── Home roster side panel (FTO) ── */
 .home-roster { display: none; }
+#role-screen.with-roster { justify-content: center; }
 #role-screen.with-roster .home-roster {
   display: flex; flex-direction: column;
-  width: 340px; flex-shrink: 0; align-self: stretch;
-  background: var(--surface); border-inline-start: 1px solid var(--border);
-  z-index: 2;
+  width: 320px; flex-shrink: 0; align-self: stretch;
+  background: linear-gradient(180deg, rgba(240,136,62,0.05) 0%, rgba(15,22,33,0.25) 22%, transparent 60%);
+  border-inline-start: 1px solid var(--border);
+  justify-content: flex-start;
+  position: relative; z-index: 2;
 }
 .hr-head { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.05rem;
-  color: var(--text); padding: 18px 20px 14px; border-bottom: 1px solid var(--border);
+  color: var(--text); padding: 22px 22px 14px;
   display: flex; flex-direction: column; gap: 3px; }
 .hr-head .hr-sub { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 0.7rem;
   color: var(--text3); letter-spacing: 1px; }
-.hr-body { flex: 1; overflow-y: auto; padding: 14px 16px 20px; }
+.hr-body { flex: 1; overflow-y: auto; padding: 6px 18px 24px; }
 .hr-loading, .hr-empty { color: var(--text3); font-size: 0.8rem; text-align: center; padding: 30px 12px; }
-.hr-fto { background: var(--bg2,#0f1621); border: 1px solid var(--border);
-  border-inline-start: 3px solid #f0883e; border-radius: 9px; padding: 11px 13px; margin-bottom: 9px; text-align: right; }
-.hr-fto-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.92rem; color: var(--text); }
-.hr-fto-cadets { display: flex; flex-direction: column; gap: 5px; margin-top: 7px; }
-.hr-cadet { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; color: var(--text2); }
-.hr-cadet::before { content: '🎓'; font-size: 0.85rem; }
+.hr-fto { background: rgba(15,22,33,0.55); border: 1px solid var(--border);
+  border-inline-start: 3px solid #f0883e; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px;
+  text-align: right; backdrop-filter: blur(2px); }
+.hr-fto-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.94rem; color: var(--text); }
+.hr-fto-cadets { display: flex; flex-direction: column; gap: 8px; margin-top: 9px; }
+.hr-cadet { display: flex; flex-direction: column; gap: 3px; font-size: 0.82rem; color: var(--text); text-align: right; }
+.hr-cadet-name { display: flex; align-items: center; gap: 7px; font-weight: 600; }
+.hr-cadet-name::before { content: '🎓'; font-size: 0.85rem; }
+.hr-dl { font-size: 0.68rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; align-self: flex-start;
+  margin-inline-start: 22px; }
 .hr-none { font-size: 0.74rem; color: var(--text3); font-style: italic; margin-top: 5px; }
-
+.dl-ok   { background: rgba(52,211,153,0.14);  color: #34d399; }
+.dl-soon { background: rgba(251,191,36,0.16);   color: #fbbf24; }
+.dl-over { background: rgba(248,113,113,0.16);  color: #f87171; }
+.slot-block { display: flex; flex-direction: column; gap: 6px; align-items: stretch;
+  background: var(--bg2,#0f1621); border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px 11px; min-width: 190px; }
+.slot-top { display: flex; align-items: center; gap: 8px; }
+.slot-name { flex: 1; font-size: 0.85rem; font-weight: 600; color: var(--text); text-align: right; }
+.slot-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.slot-date { background: var(--surface); border: 1px solid var(--border); border-radius: 7px;
+  padding: 4px 8px; color: var(--text2); font-size: 0.74rem; font-family: 'Inter', sans-serif;
+  color-scheme: dark; outline: none; }
+.slot-date:focus { border-color: var(--accent); }
+.dl-badge { font-size: 0.68rem; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+.slot-input { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 @media (max-width: 820px) {
   #role-screen.with-roster { flex-direction: column; }
   #role-screen.with-roster .home-roster {
     width: 100%; border-inline-start: none; border-top: 1px solid var(--border);
-    max-height: 42vh;
+    max-height: 42vh; background: linear-gradient(180deg, rgba(240,136,62,0.05), transparent 70%);
   }
 }
+
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -636,7 +650,10 @@ function renderHomeRoster() {
     var cadets = (d.assignments[f] || []);
     var cadetHtml = cadets.length
       ? '<div class="hr-fto-cadets">' + cadets.map(function(c) {
-          return '<div class="hr-cadet">' + esc(c) + '</div>';
+          var co = cadetObj(c);
+          var info = deadlineInfo(co.start);
+          var dl = info ? '<span class="hr-dl ' + deadlineClass(info) + '">עד ' + info.text + ' · ' + deadlineLabel(info) + '</span>' : '';
+          return '<div class="hr-cadet"><span class="hr-cadet-name">' + esc(co.name) + '</span>' + dl + '</div>';
         }).join('') + '</div>'
       : '<div class="hr-none">אין שיבוץ</div>';
     return '<div class="hr-fto"><div class="hr-fto-name">🎖️ ' + esc(f) + '</div>' + cadetHtml + '</div>';
@@ -959,6 +976,39 @@ function saveRoster() {
 }
 
 // clean assignments: drop unknown ftos, cap at MAX
+function cadetObj(c) {
+  if (c && typeof c === 'object') return { name: c.name || '', start: c.start || '' };
+  return { name: String(c || ''), start: '' };
+}
+function cadetName(c) { return cadetObj(c).name; }
+
+function deadlineInfo(start) {
+  if (!start) return null;
+  var d = new Date(start + 'T00:00:00');
+  if (isNaN(d.getTime())) return null;
+  var dl = new Date(d.getTime());
+  dl.setDate(dl.getDate() + 3);
+  var today = new Date(); today.setHours(0,0,0,0);
+  var dlMid = new Date(dl.getTime()); dlMid.setHours(0,0,0,0);
+  var days = Math.round((dlMid - today) / 86400000);
+  var dd = String(dl.getDate()).padStart(2,'0');
+  var mm = String(dl.getMonth()+1).padStart(2,'0');
+  return { text: dd + '/' + mm, days: days };
+}
+function deadlineLabel(info) {
+  if (!info) return '';
+  if (info.days < 0)  return 'עבר ב-' + Math.abs(info.days) + ' ימים';
+  if (info.days === 0) return 'היום!';
+  if (info.days === 1) return 'מחר';
+  return 'בעוד ' + info.days + ' ימים';
+}
+function deadlineClass(info) {
+  if (!info) return '';
+  if (info.days < 0)  return 'dl-over';
+  if (info.days <= 1) return 'dl-soon';
+  return 'dl-ok';
+}
+
 function cleanAssignments() {
   var a = {};
   rosterData.ftos.forEach(function(f) {
@@ -993,16 +1043,26 @@ function renderRoster() {
 
   var assignRows = d.ftos.length ? d.ftos.map(function(f, i) {
     var slots = d.assignments[f] || [];
-    var slotHtml = slots.map(function(c) {
-      return '<span class="slot">' + esc(c) +
-        (editable ? '<button class="sx" onclick="unassign(\'' + jsq(f) + '\',\'' + jsq(c) + '\')">✕</button>' : '') +
-        '</span>';
+    var slotHtml = slots.map(function(c, si) {
+      var co = cadetObj(c);
+      var info = deadlineInfo(co.start);
+      var dlHtml = info ? '<span class="dl-badge ' + deadlineClass(info) + '">עד ' + info.text + ' · ' + deadlineLabel(info) + '</span>' : '';
+      var dateCtrl = editable
+        ? '<input type="date" class="slot-date" value="' + esc(co.start) + '" onchange="setCadetDate(\'' + jsq(f) + '\',' + si + ',this.value)">'
+        : '';
+      return '<div class="slot slot-block">' +
+        '<div class="slot-top"><span class="slot-name">' + esc(co.name) + '</span>' +
+        (editable ? '<button class="sx" onclick="unassign(\'' + jsq(f) + '\',' + si + ')">✕</button>' : '') +
+        '</div>' +
+        (info || editable ? '<div class="slot-meta">' + dateCtrl + dlHtml + '</div>' : '') +
+        '</div>';
     }).join('');
     if (editable) {
       if (slots.length < MAX_PER_FTO) {
-        slotHtml += '<span class="slot-input"><input id="cadet-in-' + i + '" placeholder="שם חניך…" ' +
-          'onkeydown="if(event.key===\'Enter\')assign(\'' + jsq(f) + '\',' + i + ')"' +
-          '><button class="slot-go" onclick="assign(\'' + jsq(f) + '\',' + i + ')">+</button></span>';
+        slotHtml += '<div class="slot-input"><input id="cadet-in-' + i + '" placeholder="שם חניך…" ' +
+          'onkeydown="if(event.key===\'Enter\')assign(\'' + jsq(f) + '\',' + i + ')">' +
+          '<input type="date" id="cadet-date-' + i + '" class="slot-date" title="תאריך התחלה">' +
+          '<button class="slot-go" onclick="assign(\'' + jsq(f) + '\',' + i + ')">+</button></div>';
       } else {
         slotHtml += '<span class="slot-full">מלא (' + MAX_PER_FTO + ')</span>';
       }
@@ -1079,17 +1139,28 @@ function removeFto(f) {
 }
 
 function assign(fto, inputIdx) {
-  var input = document.getElementById('cadet-in-' + inputIdx);
-  var cadet = input ? (input.value || '').trim() : '';
-  if (!cadet) return;
+  var nameEl = document.getElementById('cadet-in-' + inputIdx);
+  var dateEl = document.getElementById('cadet-date-' + inputIdx);
+  var name = nameEl ? (nameEl.value || '').trim() : '';
+  var start = dateEl ? (dateEl.value || '') : '';
+  if (!name) { if (nameEl) nameEl.focus(); return; }
   if (!rosterData.assignments[fto]) rosterData.assignments[fto] = [];
   if (rosterData.assignments[fto].length >= MAX_PER_FTO) return;
-  rosterData.assignments[fto].push(cadet);
+  rosterData.assignments[fto].push({ name: name, start: start });
   saveRoster(); renderRoster();
 }
 
-function unassign(fto, cadet) {
-  rosterData.assignments[fto] = (rosterData.assignments[fto]||[]).filter(function(x){ return x !== cadet; });
+function setCadetDate(fto, slotIdx, value) {
+  var list = rosterData.assignments[fto];
+  if (!list || !list[slotIdx]) return;
+  list[slotIdx] = { name: cadetName(list[slotIdx]), start: value || '' };
+  saveRoster(); renderRoster();
+}
+
+function unassign(fto, slotIdx) {
+  var list = rosterData.assignments[fto] || [];
+  list.splice(slotIdx, 1);
+  rosterData.assignments[fto] = list;
   saveRoster(); renderRoster();
 }
 
