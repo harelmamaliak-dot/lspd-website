@@ -926,6 +926,7 @@ function openDetail(idx) {
 var MAX_PER_FTO = 2;
 var rosterData = { ftos: [], assignments: {} };
 var rosterBound = false;
+var rosterLocalWrite = false;  // suppress echo re-render of editor after our own save
 
 function rosterNormalize(d) {
   d = d || {};
@@ -952,18 +953,23 @@ function bindRoster(cb) {
 
 // Refresh whichever roster UI is currently on screen (live updates)
 function refreshRosterUI() {
+  // Read-only home panel: always safe to refresh.
   var roleScreen = document.getElementById('role-screen');
   if (roleScreen && roleScreen.style.display !== 'none' && roleScreen.classList.contains('with-roster')) {
     renderHomeRoster();
   }
+  // Editor: if this snapshot is the echo of our OWN save, don't rebuild —
+  // the editor already shows the fresh data and a rebuild would wipe in-progress inputs.
   var rosterScreen = document.getElementById('roster-screen');
   if (rosterScreen && rosterScreen.style.display !== 'none') {
-    renderRoster();
+    if (rosterLocalWrite) { rosterLocalWrite = false; }
+    else { renderRoster(); }  // genuine remote change from another device
   }
 }
 
 function saveRoster() {
   if (!db) return;
+  rosterLocalWrite = true;  // our own change; ignore the snapshot echo for the editor
   var st = document.getElementById('roster-save-state');
   if (st) { st.textContent = 'שומר…'; st.className = 'roster-save saving'; }
   db.collection('roster').doc('current').set(rosterData).then(function() {
@@ -1041,6 +1047,21 @@ function renderRoster() {
   var d = rosterData;
   var body = document.getElementById('roster-body');
 
+  // Preserve any half-typed cadet name/date + the "add manager" field across the rebuild,
+  // so adding a manager or a live update doesn't wipe what you were typing.
+  var carry = { add: '', inputs: {} };
+  if (editable) {
+    var addEl = document.getElementById('add-fto');
+    if (addEl) carry.add = addEl.value || '';
+    d.ftos.forEach(function(f, i) {
+      var nameEl = document.getElementById('cadet-in-' + i);
+      var dateEl = document.getElementById('cadet-date-' + i);
+      if ((nameEl && nameEl.value) || (dateEl && dateEl.value)) {
+        carry.inputs[f] = { name: nameEl ? nameEl.value : '', date: dateEl ? dateEl.value : '' };
+      }
+    });
+  }
+
   var assignRows = d.ftos.length ? d.ftos.map(function(f, i) {
     var slots = d.assignments[f] || [];
     var slotHtml = slots.map(function(c, si) {
@@ -1104,6 +1125,20 @@ function renderRoster() {
     '<div class="assign-table">' + assignRows + '</div>';
 
   body.innerHTML = html;
+
+  // Restore carried input values
+  if (editable) {
+    var addEl2 = document.getElementById('add-fto');
+    if (addEl2 && carry.add) addEl2.value = carry.add;
+    d.ftos.forEach(function(f, i) {
+      var saved = carry.inputs[f];
+      if (!saved) return;
+      var nameEl = document.getElementById('cadet-in-' + i);
+      var dateEl = document.getElementById('cadet-date-' + i);
+      if (nameEl && saved.name) nameEl.value = saved.name;
+      if (dateEl && saved.date) dateEl.value = saved.date;
+    });
+  }
 }
 
 function jsq(v) { return String(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
