@@ -318,6 +318,13 @@ header {
 .fto-del { background:transparent; border:none; color:var(--text3); cursor:pointer;
   font-size:0.7rem; padding:0; }
 .fto-del:hover { color:#f87171; }
+.fto-name-row { display:flex; align-items:center; gap:8px; }
+.fto-name-row .fto-name-edit { flex:1; }
+.fto-del-x { flex-shrink:0; width:26px; height:26px; border-radius:50%;
+  background:rgba(248,113,113,0.10); border:1px solid rgba(248,113,113,0.30);
+  color:#f87171; font-size:0.85rem; line-height:1; cursor:pointer; padding:0;
+  display:flex; align-items:center; justify-content:center; transition:all .15s; }
+.fto-del-x:hover { background:#f87171; border-color:#f87171; color:#fff; transform:scale(1.08); }
 /* ── Home roster side panel (FTO) ── */
 .home-roster { display: none; }
 #role-screen.with-roster .home-roster {
@@ -1093,16 +1100,17 @@ function renderRoster() {
     }
 
     var ftoNameHtml = editable
-      ? '<input class="fto-name-edit" value="' + esc(f) + '" ' +
-        'onchange="renameFto(\'' + jsq(f) + '\', this.value)" ' +
-        'onkeydown="if(event.key===\'Enter\')this.blur()">'
+      ? '<div class="fto-name-row">' +
+          '<button class="fto-del-x" title="הסר מדריך" onclick="removeFto(\'' + jsq(f) + '\')">✕</button>' +
+          '<input class="fto-name-edit" value="' + esc(f) + '" ' +
+          'onchange="renameFto(\'' + jsq(f) + '\', this.value)" ' +
+          'onkeydown="if(event.key===\'Enter\')this.blur()">' +
+        '</div>'
       : '<div class="afn">🎖️ ' + esc(f) + '</div>';
 
     return '<div class="assign-row">' +
       '<div class="assign-fto">' + ftoNameHtml +
-        '<div class="afc">' + slots.length + ' מתוך ' + MAX_PER_FTO + ' חניכים' +
-        (editable ? ' · <button class="fto-del" onclick="removeFto(\'' + jsq(f) + '\')">🗑 הסר מדריך</button>' : '') +
-        '</div>' +
+        '<div class="afc">' + slots.length + ' מתוך ' + MAX_PER_FTO + ' חניכים</div>' +
       '</div>' +
       '<div class="assign-slots">' + slotHtml + '</div></div>';
   }).join('') : '<div class="roster-empty-col">' +
